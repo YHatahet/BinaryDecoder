@@ -24,7 +24,7 @@
     "url": "https://github.com/YHatahet/BinaryDecoder/issues"
   },
   "homepage": "https://github.com/YHatahet/BinaryDecoder#readme",
-  "dependencies": {
+  "devDependencies": {
     "jest": "^28.1.3"
   }
 }
