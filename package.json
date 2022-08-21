@@ -1,0 +1,27 @@
+{
+  "name": "binarydecoder",
+  "version": "1.0.0",
+  "description": "Decodes binary data sequentially",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YHatahet/BinaryDecoder.git"
+  },
+  "keywords": [
+    "decoder",
+    "parser",
+    "binary",
+    "chained",
+    "teltonika",
+    "serial"
+  ],
+  "author": "Yamen Hatahet",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/YHatahet/BinaryDecoder/issues"
+  },
+  "homepage": "https://github.com/YHatahet/BinaryDecoder#readme"
+}
