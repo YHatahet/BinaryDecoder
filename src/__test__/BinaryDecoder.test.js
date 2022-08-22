@@ -48,3 +48,34 @@ test("Testing basic 'next' method", () => {
 
   expect(output2).toStrictEqual(expected2);
 });
+
+test("Testing the parsing of unfinished data", () => {
+  const data = [0xf0, 0x0f, 0xff, 0xaa];
+
+  const BD = new BinaryDecoder(data);
+
+  const output1 = BD.skip(3 * 8) // skip 3 bytes
+    .next(6, "first6Bits")
+    .next(3, "shouldntExist").result;
+
+  const expected1 = {
+    first6Bits: 0b101010,
+  };
+
+  // Should not parse unfinished data
+  expect(output1).toStrictEqual(expected1);
+
+  const output2 = BD.reset() // re-parse the same array
+    .parseUnfinished(true) // false by default, set as true
+    .skip(3 * 8) // skip 3 bytes
+    .next(6, "first6Bits")
+    .next(3, "unfinishedData").result;
+
+  const expected2 = {
+    first6Bits: 0b101010,
+    unfinishedData: 0b10,
+  };
+
+  // Should not parse unfinished data
+  expect(output2).toStrictEqual(expected2);
+});
