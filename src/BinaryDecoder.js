@@ -9,10 +9,11 @@ class BinaryDecoder {
 
   // Private Variables
   #result;
-  #registerSizeInBits;
   #endian;
   #bitIndex;
   #dataArray;
+  #parseUnfinished;
+  #registerSizeInBits;
 
   /**
    * Initialize default private parameters and chained decoder class
@@ -24,6 +25,7 @@ class BinaryDecoder {
     this.#endian = "big";
     this.#dataArray = array;
     this.#registerSizeInBits = 8;
+    this.#parseUnfinished = false;
     this.binaryEquivalent = this.#arrToBinaryString(array);
   }
 
@@ -100,6 +102,16 @@ class BinaryDecoder {
   }
 
   /**
+   * Choose to parse unfinished data or not.
+   * @param {boolean} choice
+   * @returns {this}
+   */
+  parseUnfinished(choice) {
+    this.#parseUnfinished = choice;
+    return this;
+  }
+
+  /**
    * Decode the next amount of bits and give them a name. The decoded values will be stored in ".result"
    * @param {Number} sizeInBits
    * @param {String} name
@@ -111,6 +123,13 @@ class BinaryDecoder {
     if (this.#bitIndex >= this.binaryEquivalent.length) return this;
 
     const end = this.#bitIndex + sizeInBits;
+
+    // If we have more data but it's smaller than anticipated,
+    // check if we need to parse unfinished data
+    if (!this.#parseUnfinished && end > this.binaryEquivalent.length) {
+      this.#bitIndex = end;
+      return this;
+    }
 
     const slice =
       this.#endian === "little"
