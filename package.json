@@ -4,7 +4,7 @@
   "description": "Decodes binary data sequentially",
   "main": "index.js",
   "scripts": {
-    "test": "test"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
