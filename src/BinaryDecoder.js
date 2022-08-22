@@ -34,28 +34,19 @@ class BinaryDecoder {
   #arrToBinaryString(array, registerSizeInBits = 8) {
     const outputArray = [];
     for (const byte of array) {
-      const binaryEquivalent = this.#padZerosLeft(
-        byte.toString(2),
-        registerSizeInBits
-      );
+      let binaryEquivalent = byte.toString(2);
+
+      const zerosToPad =
+        registerSizeInBits - binaryEquivalent.length > 0
+          ? registerSizeInBits - binaryEquivalent.length
+          : 0;
+
+      binaryEquivalent = "0".repeat(zerosToPad) + binaryEquivalent;
+
       outputArray.push(binaryEquivalent);
     }
 
     return outputArray.join("");
-  }
-
-  /**
-   * Pad strings with 0s to the left
-   * @param {string} str
-   * @param {number} requiredLength
-   * @returns {string}
-   */
-  #padZerosLeft(str, requiredLength) {
-    if (typeof str !== "string")
-      throw new Error("padZeros: input not a string");
-    const stringLength = str.length;
-    if (stringLength >= requiredLength) return str;
-    return "0".repeat(requiredLength - stringLength) + str;
   }
 
   /**
