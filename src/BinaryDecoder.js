@@ -4,9 +4,14 @@ class BinaryDecoder {
    * @param {number[]} array
    */
   constructor(array) {
-    this.#registerSizeInBits = 8;
     this.#init(array);
   }
+
+  // Private Variables
+  #result;
+  #registerSizeInBits;
+  #endian;
+  #bitIndex;
 
   /**
    * Initialize default private parameters and chained decoder class
@@ -14,22 +19,24 @@ class BinaryDecoder {
    */
   #init(array) {
     this.#result = {};
-    this.#endian = "big";
     this.#bitIndex = 0;
+    this.#endian = "big";
+    this.#registerSizeInBits = 8;
     this.binaryEquivalent = this.#arrToBinaryString(array);
   }
 
   /**
    * Convert array to a binary string
    * @param {Number[]} array
+   * @param {Number} registerSizeInBits size in bits of every register/entry in array
    * @returns {String}
    */
-  #arrToBinaryString(array) {
+  #arrToBinaryString(array, registerSizeInBits = 8) {
     const outputArray = [];
     for (const byte of array) {
       const binaryEquivalent = this.#padZerosLeft(
         byte.toString(2),
-        this.#registerSizeInBits
+        registerSizeInBits
       );
       outputArray.push(binaryEquivalent);
     }
