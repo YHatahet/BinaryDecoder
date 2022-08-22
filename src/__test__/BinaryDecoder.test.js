@@ -76,6 +76,6 @@ test("Testing the parsing of unfinished data", () => {
     unfinishedData: 0b10,
   };
 
-  // Should not parse unfinished data
+  // Should parse unfinished data
   expect(output2).toStrictEqual(expected2);
 });
