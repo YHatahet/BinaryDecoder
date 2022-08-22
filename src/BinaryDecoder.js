@@ -28,16 +28,6 @@ class BinaryDecoder {
   }
 
   /**
-   * Reinitialize the decoder with new data
-   * @param {number[]} array
-   * @returns {this}
-   */
-  reset(array = this.#dataArray) {
-    this.#init(array);
-    return this;
-  }
-
-  /**
    * Convert array to a binary string
    * @param {Number[]} array
    * @param {Number} registerSizeInBits size in bits of every register/entry in array
@@ -70,6 +60,26 @@ class BinaryDecoder {
   }
 
   /**
+   * Reinitialize the decoder with new data
+   * @param {number[]} array
+   * @returns {this}
+   */
+  reset(array = this.#dataArray) {
+    this.#init(array);
+    return this;
+  }
+
+  /**
+   * Skip a given number of bits
+   * @param {number} numberOfBits
+   * @returns {this}
+   */
+  skip(numberOfBits) {
+    this.#bitIndex += numberOfBits;
+    return this;
+  }
+
+  /**
    * Select the endianness to decode the next values
    * @param {'big' | 'little'} endian
    * @returns {this}
@@ -78,7 +88,7 @@ class BinaryDecoder {
     this.#endian = endian;
     return this;
   }
-  
+
   /**
    * Select the register size in bits. Currently required to be set at the start.
    * @param {number} registerSizeInBits
