@@ -70,6 +70,26 @@ class BinaryDecoder {
   }
 
   /**
+   * Select the endianness to decode the next values
+   * @param {'big' | 'little'} endian
+   * @returns {this}
+   */
+  endianness(endian) {
+    this.#endian = endian;
+    return this;
+  }
+  
+  /**
+   * Select the register size in bits. Currently required to be set at the start.
+   * @param {number} registerSizeInBits
+   * @returns {this}
+   */
+  registerSize(registerSizeInBits) {
+    if (this.#bitIndex === 0) this.#registerSizeInBits = registerSizeInBits;
+    return this;
+  }
+
+  /**
    * Decode the next amount of bits and give them a name. The decoded values will be stored in ".result"
    * @param {Number} sizeInBits
    * @param {String} name
