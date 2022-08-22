@@ -1,11 +1,11 @@
 const BinaryDecoder = require("../BinaryDecoder");
 
-test("Testing 'next' method", () => {
+test("Testing 'skip' method", () => {
   const data = [0xf0, 0x0f, 0xff, 0x00];
 
   const BD = new BinaryDecoder(data);
 
-  const output = BD.skip(4)
+  const output = BD.skip(4) // skip first half
     .next(4, "secondHalfOfFirstByte")
     .skip(8) // second byte
     .next(16, "_3rdAnd4thBytes").result;
