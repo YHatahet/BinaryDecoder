@@ -12,6 +12,7 @@ class BinaryDecoder {
   #registerSizeInBits;
   #endian;
   #bitIndex;
+  #dataArray;
 
   /**
    * Initialize default private parameters and chained decoder class
@@ -21,8 +22,19 @@ class BinaryDecoder {
     this.#result = {};
     this.#bitIndex = 0;
     this.#endian = "big";
+    this.#dataArray = array;
     this.#registerSizeInBits = 8;
     this.binaryEquivalent = this.#arrToBinaryString(array);
+  }
+
+  /**
+   * Reinitialize the decoder with new data
+   * @param {number[]} array
+   * @returns {this}
+   */
+  reset(array = this.#dataArray) {
+    this.#init(array);
+    return this;
   }
 
   /**
