@@ -102,3 +102,52 @@ test("Testing formatter function option", () => {
   expect(output1).toStrictEqual(expected1);
 });
 
+test("Testing real life data from Teltonika device", () => {
+  const latLongFormatter = (value) => value / 60000;
+  const altitudeFormatter = (value) => value / 10;
+  const speedFormatter = (value) => value; // in km/h
+  const headingFormatter = (value) => value / 10;
+  const eventTimeFormatter = (value) => value;
+
+  const data = [
+    128, 1, 82, 101, 192, 82, 101, 192, 0, 3, 13, 64, 207, 32, 240, 0, 0, 0, 0,
+    0, 0, 0, 32, 0, 0, 0, 32, 0, 0, 0, 32, 0, 0, 0, 32, 0, 0, 0, 32, 0, 0, 1,
+    128,
+  ];
+
+  const BD = new BinaryDecoder(data);
+
+  const output1 = BD.skip(16)
+    .next(24, "latitude", { formatter: latLongFormatter, signedness: "signed" })
+    .next(25, "longitude", {
+      formatter: latLongFormatter,
+      signedness: "signed",
+    })
+    .next(31, "altitude", { formatter: altitudeFormatter })
+    .next(10, "speed", { formatter: speedFormatter })
+    .next(10, "heading", { formatter: headingFormatter })
+    .next(31, "fixTime", { formatter: eventTimeFormatter })
+    .next(32, "smokeSensor")
+    .next(32, "panicButton")
+    .next(32, "doorSensor")
+    .next(32, "alarmSensor")
+    .next(32, "immobilizer")
+    .next(31, "engineState").result;
+
+  const expected1 = {
+    latitude: 90,
+    longitude: 180,
+    altitude: 20000,
+    speed: 828,
+    heading: 52.7,
+    fixTime: 0,
+    smokeSensor: 1,
+    panicButton: 1,
+    doorSensor: 1,
+    alarmSensor: 1,
+    immobilizer: 1,
+    engineState: 6,
+  };
+
+  expect(output1).toStrictEqual(expected1);
+});
