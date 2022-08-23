@@ -7,7 +7,8 @@ class BinaryDecoder {
     this.#init(array);
   }
 
-  // Private Variables
+  // ================= Private Variables =================
+
   #result;
   #endian;
   #bitIndex;
@@ -15,6 +16,8 @@ class BinaryDecoder {
   #parseUnfinished;
   #registerSizeInBits;
 
+
+  // ================= Private functions =================
   /**
    * Initialize default private parameters and chained decoder class
    * @param {number[]} array
@@ -60,6 +63,8 @@ class BinaryDecoder {
   get result() {
     return this.#result;
   }
+
+  // ================= Instance methods =================
 
   /**
    * Reinitialize the decoder with new data
