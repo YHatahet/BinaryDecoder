@@ -79,3 +79,26 @@ test("Testing the parsing of unfinished data", () => {
   // Should parse unfinished data
   expect(output2).toStrictEqual(expected2);
 });
+
+test("Testing formatter function option", () => {
+  const data = [12, 34, 56, 78];
+
+  const BD = new BinaryDecoder(data);
+
+  const addTen = (val) => val + 10;
+
+  const output1 = BD.next(8, "firstByte", { formatter: addTen })
+    .next(8, "secondByte", { formatter: addTen })
+    .next(8, "thirdByte", { formatter: addTen })
+    .next(8, "fourthByte", { formatter: addTen }).result;
+
+  const expected1 = {
+    firstByte: 22,
+    secondByte: 44,
+    thirdByte: 66,
+    fourthByte: 88,
+  };
+
+  expect(output1).toStrictEqual(expected1);
+});
+
