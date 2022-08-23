@@ -57,6 +57,26 @@ class BinaryDecoder {
   }
 
   /**
+   * Convert unsigned numbers of any size to signed.
+   * This function works under the condition that (2^sizeInBits -1) >= unsigned number,
+   * meaning that the position of the leftmost 1 bit in the unsigned number should be
+   * no greater than "sizeInBits".
+   * @param {number} unsignedNumber
+   * @param {number} [sizeInBits]
+   * @returns {number}
+   */
+  #unsignedToSignedBits(unsignedNumber, sizeInBits = 8) {
+    const mask = 1 << (sizeInBits - 1);
+    if (mask & unsignedNumber) {
+      unsignedNumber ^= mask; // remove leftmost bit
+      unsignedNumber -= mask;
+    }
+    return unsignedNumber;
+  }
+
+  // ================= Getter functions =================
+
+  /**
    * Fetches the result of the parsing process
    * @returns {Object}
    */

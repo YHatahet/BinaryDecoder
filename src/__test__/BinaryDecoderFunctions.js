@@ -16,4 +16,13 @@ module.exports = {
 
     return outputArray.join("");
   },
+
+  unsignedToSignedBits(unsignedNumber, sizeInBits = 8) {
+    const mask = 1 << (sizeInBits - 1);
+    if (mask & unsignedNumber) {
+      unsignedNumber ^= mask; // remove leftmost bit
+      unsignedNumber -= mask;
+    }
+    return unsignedNumber;
+  },
 };
