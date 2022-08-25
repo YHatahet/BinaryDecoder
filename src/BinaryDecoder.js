@@ -144,6 +144,7 @@ class BinaryDecoder {
    * @param {Object} [options]
    * @param {"signed" | "unsigned"} [options.signedness]
    * @param {Function} [options.formatter]
+   * @param {Function} [options.saveCondition] Function applied after formatter on value. If true, saved to result
    * @returns {this}
    */
   next(sizeInBits, name, options = {}) {
@@ -175,6 +176,13 @@ class BinaryDecoder {
     // Formatter
     if (typeof options.formatter === "function") {
       val = options.formatter(val);
+    }
+    // Save Condition
+    if (
+      typeof options.saveCondition === "function" &&
+      !options.saveCondition(val)
+    ) {
+      val = undefined;
     }
     if (val !== undefined) this.#result[name] = val;
 
