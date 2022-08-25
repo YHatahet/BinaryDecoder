@@ -102,6 +102,31 @@ test("Testing formatter function option", () => {
   expect(output1).toStrictEqual(expected1);
 });
 
+test("Testing save condition option", () => {
+  const data = [12, 34, 56, 78];
+
+  const BD = new BinaryDecoder(data);
+
+  const addTen = (val) => val + 10;
+
+  const output1 = BD.next(8, "firstByte", { saveCondition: (val) => val > 3 }) // should save
+    .next(8, "secondByte", { saveCondition: (val) => val < 3 }) // shouldn't save
+    .next(8, "thirdByte", {
+      formatter: addTen,
+      saveCondition: (val) => val > 3,
+    }) // should save
+    .next(8, "fourthByte", {
+      formatter: addTen,
+      saveCondition: (val) => val < 3,
+    }).result; // shouldn't save
+
+  const expected1 = {
+    firstByte: 12,
+    thirdByte: 66,
+  };
+
+  expect(output1).toStrictEqual(expected1);
+});
 test("Testing real life data from Teltonika device", () => {
   const latLongFormatter = (value) => value / 60000;
   const altitudeFormatter = (value) => value / 10;
