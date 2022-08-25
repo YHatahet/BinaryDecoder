@@ -13,6 +13,7 @@ class BinaryDecoder {
   #endian;
   #bitIndex;
   #dataArray;
+  #signedness;
   #parseUnfinished;
   #registerSizeInBits;
 
@@ -141,6 +142,8 @@ class BinaryDecoder {
    * @param {Number} sizeInBits
    * @param {String} name
    * @param {Object} [options]
+   * @param {"signed" | "unsigned"} [options.signedness]
+   * @param {Function} [options.formatter]
    * @returns {this}
    */
   next(sizeInBits, name, options = {}) {
@@ -165,6 +168,14 @@ class BinaryDecoder {
 
     let val = parseInt(slice, 2);
 
+    // Signedness
+    if (options.signedness === "signed") {
+      val = this.#unsignedToSignedBits(val, sizeInBits);
+    }
+    // Formatter
+    if (typeof options.formatter === "function") {
+      val = options.formatter(val);
+    }
     if (val !== undefined) this.#result[name] = val;
 
     this.#bitIndex = end;
