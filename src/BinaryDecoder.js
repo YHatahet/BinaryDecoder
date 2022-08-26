@@ -13,7 +13,6 @@ class BinaryDecoder {
   #endian;
   #bitIndex;
   #dataArray;
-  #signedness;
   #parseUnfinished;
   #registerSizeInBits;
 
@@ -30,7 +29,7 @@ class BinaryDecoder {
     this.#dataArray = array;
     this.#registerSizeInBits = 8;
     this.#parseUnfinished = false;
-    this.binaryEquivalent = this.#arrToBinaryString(array);
+    this.binaryEquivalent = this.#arrToBinaryString(array, this.#registerSizeInBits);
   }
 
   /**
