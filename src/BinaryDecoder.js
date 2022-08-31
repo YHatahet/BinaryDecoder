@@ -1,3 +1,7 @@
+"use strict";
+
+const Queue = require("queue-fifo");
+
 class BinaryDecoder {
   /**
    *
@@ -13,6 +17,8 @@ class BinaryDecoder {
   #endian;
   #bitIndex;
   #dataArray;
+  #functionIndex;
+  #functionQueue;
   #parseUnfinished;
   #registerSizeInBits;
 
@@ -27,6 +33,8 @@ class BinaryDecoder {
     this.#bitIndex = 0;
     this.#endian = "big";
     this.#dataArray = array;
+    this.#functionIndex = 0;
+    this.#functionQueue = new Queue();
     this.#registerSizeInBits = 8;
     this.#parseUnfinished = false;
     this.binaryEquivalent = this.#arrToBinaryString(array, this.#registerSizeInBits);
