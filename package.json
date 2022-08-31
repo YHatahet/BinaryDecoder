@@ -26,5 +26,8 @@
   "homepage": "https://github.com/YHatahet/BinaryDecoder#readme",
   "devDependencies": {
     "jest": "^28.1.3"
+  },
+  "dependencies": {
+    "queue-fifo": "^0.2.6"
   }
 }
