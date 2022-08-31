@@ -4,7 +4,7 @@
   "description": "Decodes binary data sequentially",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "pta \"**/*.test.js\" !node_modules"
   },
   "repository": {
     "type": "git",
@@ -25,7 +25,8 @@
   },
   "homepage": "https://github.com/YHatahet/BinaryDecoder#readme",
   "devDependencies": {
-    "jest": "^28.1.3"
+    "pta": "^1.1.2",
+    "zora": "^5.0.4"
   },
   "dependencies": {
     "queue-fifo": "^0.2.6"
