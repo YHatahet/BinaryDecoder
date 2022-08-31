@@ -13,14 +13,14 @@ class BinaryDecoder {
 
   // ================= Private Variables =================
 
-  #result;
-  #endian;
-  #bitIndex;
-  #dataArray;
-  #functionIndex;
-  #functionQueue;
-  #parseUnfinished;
-  #registerSizeInBits;
+  /**@type {Object} */ #result;
+  /**@type {String} */ #endian;
+  /**@type {Number} */ #bitIndex;
+  /**@type {Number} */ #dataArray;
+  /**@type {Queue} */ #functionQueue;
+  /**@type {Number} */ #functionIndex;
+  /**@type {Boolean} */ #parseUnfinished;
+  /**@type {Number} */ #registerSizeInBits;
 
 
   // ================= Private functions =================
