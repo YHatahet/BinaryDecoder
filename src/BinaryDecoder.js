@@ -2,11 +2,11 @@
 
 const Queue = require("queue-fifo");
 
+/**
+ *
+ * @param {number[]} array
+ */
 class BinaryDecoder {
-  /**
-   *
-   * @param {number[]} array
-   */
   constructor(array) {
     this.#init(array);
   }
@@ -20,6 +20,7 @@ class BinaryDecoder {
   /**@type {Queue} */ #functionQueue;
   /**@type {Number} */ #functionIndex;
   /**@type {Boolean} */ #parseUnfinished;
+  /**@type {String} */ #binaryEquivalent;
   /**@type {Number} */ #registerSizeInBits;
 
 
@@ -34,10 +35,13 @@ class BinaryDecoder {
     this.#endian = "big";
     this.#dataArray = array;
     this.#functionIndex = 0;
-    this.#functionQueue = new Queue();
     this.#registerSizeInBits = 8;
     this.#parseUnfinished = false;
-    this.binaryEquivalent = this.#arrToBinaryString(array, this.#registerSizeInBits);
+    this.#functionQueue = new Queue();
+    this.#binaryEquivalent = this.#arrToBinaryString(
+      array,
+      this.#registerSizeInBits
+    );
   }
 
   /**
@@ -82,6 +86,73 @@ class BinaryDecoder {
     return unsignedNumber;
   }
 
+  #execReset(array) {
+    this.#init(array);
+  }
+
+  #execSkip(numberOfBits) {
+    this.#bitIndex += numberOfBits;
+  }
+
+  #execEndianness(endian) {
+    this.#endian = endian;
+  }
+
+  #execRegisterSize(registerSizeInBits) {
+    if (this.#bitIndex === 0) this.#registerSizeInBits = registerSizeInBits;
+  }
+
+  #execGoBack(numberOfBits) {
+    this.#bitIndex -= numberOfBits;
+    if (this.#bitIndex < 0) this.#bitIndex = 0;
+  }
+
+  #execParseUnfinished(choice) {
+    this.#parseUnfinished = choice;
+  }
+
+  #execNext(sizeInBits, name, options) {
+    // Stop if there's no more data to parse
+    if (this.#bitIndex >= this.#binaryEquivalent.length) return this;
+
+    const end = this.#bitIndex + sizeInBits;
+
+    // If we have more data but it's smaller than anticipated,
+    // check if we need to parse unfinished data
+    if (!this.#parseUnfinished && end > this.#binaryEquivalent.length) {
+      this.#bitIndex = end;
+      return this;
+    }
+
+    const slice =
+      this.#endian === "little"
+        ? [...this.#binaryEquivalent.slice(this.#bitIndex, end)]
+            .reverse()
+            .join("")
+        : this.#binaryEquivalent.slice(this.#bitIndex, end);
+
+    let val = parseInt(slice, 2);
+
+    // Signedness //TODO check how this is implemented
+    if (options.signedness === "signed") {
+      val = this.#unsignedToSignedBits(val, sizeInBits);
+    }
+    // Formatter
+    if (typeof options.formatter === "function") {
+      val = options.formatter(val);
+    }
+    // Save Condition
+    if (
+      typeof options.saveCondition === "function" &&
+      !options.saveCondition(val)
+    ) {
+      val = undefined;
+    }
+    if (val !== undefined) this.#result[name] = val;
+
+    this.#bitIndex = end;
+  }
+
   // ================= Getter functions =================
 
   /**
@@ -100,7 +171,7 @@ class BinaryDecoder {
    * @returns {this}
    */
   reset(array = this.#dataArray) {
-    this.#init(array);
+    this.#functionQueue.enqueue({ type: "reset", param: array });
     return this;
   }
 
@@ -110,7 +181,7 @@ class BinaryDecoder {
    * @returns {this}
    */
   skip(numberOfBits) {
-    this.#bitIndex += numberOfBits;
+    this.#functionQueue.enqueue({ type: "skip", param: numberOfBits });
     return this;
   }
 
@@ -120,7 +191,7 @@ class BinaryDecoder {
    * @returns {this}
    */
   endianness(endian) {
-    this.#endian = endian;
+    this.#functionQueue.enqueue({ type: "endianness", param: endian });
     return this;
   }
 
@@ -130,7 +201,10 @@ class BinaryDecoder {
    * @returns {this}
    */
   registerSize(registerSizeInBits) {
-    if (this.#bitIndex === 0) this.#registerSizeInBits = registerSizeInBits;
+    this.#functionQueue.enqueue({
+      type: "registerSize",
+      param: registerSizeInBits,
+    });
     return this;
   }
 
@@ -140,7 +214,17 @@ class BinaryDecoder {
    * @returns {this}
    */
   parseUnfinished(choice) {
-    this.#parseUnfinished = choice;
+    this.#functionQueue.enqueue({ type: "parseUnfinished", param: choice });
+    return this;
+  }
+
+  /**
+   *
+   * @param {*} numberOfBits
+   * @returns
+   */
+  goBack(numberOfBits) {
+    this.#functionQueue.enqueue({ type: "goBack", param: numberOfBits });
     return this;
   }
 
@@ -155,45 +239,37 @@ class BinaryDecoder {
    * @returns {this}
    */
   next(sizeInBits, name, options = {}) {
-    // Stop if there's no more data to parse
-    if (this.#bitIndex >= this.binaryEquivalent.length) return this;
+    this.#functionQueue.enqueue({
+      type: "next",
+      param: (sizeInBits, name, options),
+    });
+    return this;
+  }
 
-    const end = this.#bitIndex + sizeInBits;
 
-    // If we have more data but it's smaller than anticipated,
-    // check if we need to parse unfinished data
-    if (!this.#parseUnfinished && end > this.binaryEquivalent.length) {
-      this.#bitIndex = end;
-      return this;
+  #mappings = {
+    skip: this.#execSkip,
+    next: this.#execNext,
+    reset: this.#execReset,
+    goBack: this.#execGoBack,
+    endianness: this.#execEndianness,
+    registerSize: this.#execRegisterSize,
+    parseUnfinished: this.#execParseUnfinished,
+  };
+
+  exec() {
+    while (this.#functionIndex < this.#functionQueue.length)
+      this.execNextStep();
+
+    return this;
+  }
+
+  execNextStep() {
+    if (this.#functionIndex < this.#functionQueue.length) {
+      const { type, param } = this.#functionQueue.dequeue(); //todo
+      this.#mappings[type](...param); //todo check if it exists otherwise raise error
+      this.#functionIndex++;
     }
-
-    const slice =
-      this.#endian === "little"
-        ? [...this.binaryEquivalent.slice(this.#bitIndex, end)]
-            .reverse()
-            .join("")
-        : this.binaryEquivalent.slice(this.#bitIndex, end);
-
-    let val = parseInt(slice, 2);
-
-    // Signedness
-    if (options.signedness === "signed") {
-      val = this.#unsignedToSignedBits(val, sizeInBits);
-    }
-    // Formatter
-    if (typeof options.formatter === "function") {
-      val = options.formatter(val);
-    }
-    // Save Condition
-    if (
-      typeof options.saveCondition === "function" &&
-      !options.saveCondition(val)
-    ) {
-      val = undefined;
-    }
-    if (val !== undefined) this.#result[name] = val;
-
-    this.#bitIndex = end;
     return this;
   }
 }
