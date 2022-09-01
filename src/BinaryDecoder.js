@@ -34,7 +34,6 @@ class BinaryDecoder {
     this.#bitIndex = 0;
     this.#endian = "big";
     this.#dataArray = array;
-    this.#functionIndex = 0;
     this.#registerSizeInBits = 8;
     this.#parseUnfinished = false;
     this.#functionQueue = new Queue();
@@ -241,7 +240,7 @@ class BinaryDecoder {
   next(sizeInBits, name, options = {}) {
     this.#functionQueue.enqueue({
       type: "next",
-      param: (sizeInBits, name, options),
+      param: [sizeInBits, name, options],
     });
     return this;
   }
@@ -258,17 +257,17 @@ class BinaryDecoder {
   };
 
   exec() {
-    while (this.#functionIndex < this.#functionQueue.length)
-      this.execNextStep();
+    while (this.#functionQueue.size()) this.execNextStep();
 
     return this;
   }
 
   execNextStep() {
-    if (this.#functionIndex < this.#functionQueue.length) {
-      const { type, param } = this.#functionQueue.dequeue(); //todo
-      this.#mappings[type](...param); //todo check if it exists otherwise raise error
-      this.#functionIndex++;
+    if (this.#functionQueue.size()) {
+      const { type, param } = this.#functionQueue.dequeue();
+      Array.isArray(param)
+        ? this.#mappings[type].bind(this)(...param)
+        : this.#mappings[type].bind(this)(param);
     }
     return this;
   }
