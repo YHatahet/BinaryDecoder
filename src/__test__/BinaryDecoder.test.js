@@ -1,24 +1,27 @@
 const BinaryDecoder = require("../BinaryDecoder");
+const { test } = require("zora");
 
-test("Testing 'skip' method", () => {
+test("Testing 'skip' method", (t) => {
   const data = [0xf0, 0x0f, 0xff, 0x00];
 
-  const BD = new BinaryDecoder(data);
-
-  const output = BD.skip(4) // skip first half
+  const BD = new BinaryDecoder(data)
+    .skip(4) // skip first half
     .next(4, "secondHalfOfFirstByte")
     .skip(8) // second byte
-    .next(16, "_3rdAnd4thBytes").result;
+    .next(16, "_3rdAnd4thBytes")
+    .exec();
+
+  const output = BD.result;
 
   const expected = {
     secondHalfOfFirstByte: 0,
     _3rdAnd4thBytes: 0xff00,
   };
 
-  expect(output).toStrictEqual(expected);
+  t.equal(output, expected, "");
 });
 
-test("Testing basic 'next' method", () => {
+test("Testing basic 'next' method", (t) => {
   const data = [255, 0, 0, 255];
 
   const BD = new BinaryDecoder(data);
@@ -26,7 +29,8 @@ test("Testing basic 'next' method", () => {
   const output1 = BD.next(8, "firstByte")
     .next(8, "secondByte")
     .next(8, "thirdByte")
-    .next(8, "fourthByte").result;
+    .next(8, "fourthByte")
+    .exec().result;
 
   const expected1 = {
     firstByte: 255,
@@ -35,41 +39,44 @@ test("Testing basic 'next' method", () => {
     fourthByte: 255,
   };
 
-  expect(output1).toStrictEqual(expected1);
+  t.equal(output1, expected1, "");
 
   const output2 = BD.reset()
     .next(16, "firstHalf")
-    .next(16, "secondHalf").result;
+    .next(16, "secondHalf")
+    .exec().result;
 
   const expected2 = {
     firstHalf: 65280,
     secondHalf: 255,
   };
 
-  expect(output2).toStrictEqual(expected2);
+  t.equal(output2, expected2, "");
 });
 
-test("Testing the parsing of unfinished data", () => {
+test("Testing the parsing of unfinished data", (t) => {
   const data = [0xf0, 0x0f, 0xff, 0xaa];
 
   const BD = new BinaryDecoder(data);
 
   const output1 = BD.skip(3 * 8) // skip 3 bytes
     .next(6, "first6Bits")
-    .next(3, "shouldntExist").result;
+    .next(3, "shouldntExist")
+    .exec().result;
 
   const expected1 = {
     first6Bits: 0b101010,
   };
 
   // Should not parse unfinished data
-  expect(output1).toStrictEqual(expected1);
+  t.equal(output1, expected1, "");
 
   const output2 = BD.reset() // re-parse the same array
     .parseUnfinished(true) // false by default, set as true
     .skip(3 * 8) // skip 3 bytes
     .next(6, "first6Bits")
-    .next(3, "unfinishedData").result;
+    .next(3, "unfinishedData")
+    .exec().result;
 
   const expected2 = {
     first6Bits: 0b101010,
@@ -77,10 +84,10 @@ test("Testing the parsing of unfinished data", () => {
   };
 
   // Should parse unfinished data
-  expect(output2).toStrictEqual(expected2);
+  t.equal(output2, expected2, "");
 });
 
-test("Testing formatter function option", () => {
+test("Testing formatter function option", (t) => {
   const data = [12, 34, 56, 78];
 
   const BD = new BinaryDecoder(data);
@@ -90,7 +97,8 @@ test("Testing formatter function option", () => {
   const output1 = BD.next(8, "firstByte", { formatter: addTen })
     .next(8, "secondByte", { formatter: addTen })
     .next(8, "thirdByte", { formatter: addTen })
-    .next(8, "fourthByte", { formatter: addTen }).result;
+    .next(8, "fourthByte", { formatter: addTen })
+    .exec().result;
 
   const expected1 = {
     firstByte: 22,
@@ -99,10 +107,10 @@ test("Testing formatter function option", () => {
     fourthByte: 88,
   };
 
-  expect(output1).toStrictEqual(expected1);
+  t.equal(output1, expected1, "");
 });
 
-test("Testing save condition option", () => {
+test("Testing save condition option", (t) => {
   const data = [12, 34, 56, 78];
 
   const BD = new BinaryDecoder(data);
@@ -118,16 +126,42 @@ test("Testing save condition option", () => {
     .next(8, "fourthByte", {
       formatter: addTen,
       saveCondition: (val) => val < 3,
-    }).result; // shouldn't save
+    })
+    .exec().result; // shouldn't save
 
   const expected1 = {
     firstByte: 12,
     thirdByte: 66,
   };
 
-  expect(output1).toStrictEqual(expected1);
+  t.equal(output1, expected1, "");
 });
-test("Testing real life data from Teltonika device", () => {
+  expect(output1).toStrictEqual(expected1);
+
+test("Testing formatter function option", (t) => {
+  const data = [12, 34, 56, 78];
+
+  const BD = new BinaryDecoder(data);
+
+  const addTen = (val) => val + 10;
+
+  const output1 = BD.next(8, "firstByte", { formatter: addTen })
+    .next(8, "secondByte", { formatter: addTen })
+    .next(8, "thirdByte", { formatter: addTen })
+    .next(8, "fourthByte", { formatter: addTen })
+    .exec().result;
+
+  const expected1 = {
+    firstByte: 22,
+    secondByte: 44,
+    thirdByte: 66,
+    fourthByte: 88,
+  };
+
+  t.equal(output1, expected1, "");
+});
+
+test("Testing real life data from Teltonika device", (t) => {
   const latLongFormatter = (value) => value / 60000;
   const altitudeFormatter = (value) => value / 10;
   const speedFormatter = (value) => value; // in km/h
@@ -157,7 +191,8 @@ test("Testing real life data from Teltonika device", () => {
     .next(32, "doorSensor")
     .next(32, "alarmSensor")
     .next(32, "immobilizer")
-    .next(31, "engineState").result;
+    .next(31, "engineState")
+    .exec().result;
 
   const expected1 = {
     latitude: 90,
@@ -174,5 +209,5 @@ test("Testing real life data from Teltonika device", () => {
     engineState: 6,
   };
 
-  expect(output1).toStrictEqual(expected1);
+  t.equal(output1, expected1, "");
 });
