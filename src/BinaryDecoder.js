@@ -3,6 +3,20 @@
 const Queue = require("queue-fifo");
 
 /**
+ * A Class providing an "empty" functions which can
+ * be called endlessly/chained without errors
+ */
+class EmptyChainedDecoder {
+  emptyReturn = () => this;
+  next = this.emptyReturn;
+  skip = this.emptyReturn;
+  endianness = this.emptyReturn;
+  registerSize = this.emptyReturn;
+  parseUnfinished = this.emptyReturn;
+  defaultFormatter = this.emptyReturn;
+}
+
+/**
  *
  * @param {number[]} array
  */
