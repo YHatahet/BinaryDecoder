@@ -36,6 +36,15 @@ class BinaryDecoder {
   /**@type {Boolean} */ #parseUnfinished;
   /**@type {String} */ #binaryEquivalent;
   /**@type {Number} */ #registerSizeInBits;
+  /**@type {Object} */ #mappings = {
+    next: this.#execNext,
+    skip: this.#execSkip,
+    reset: this.#execReset,
+    goBack: this.#execGoBack,
+    endianness: this.#execEndianness,
+    registerSize: this.#execRegisterSize,
+    parseUnfinished: this.#execParseUnfinished,
+  };
 
 
   // ================= Private functions =================
@@ -190,7 +199,10 @@ class BinaryDecoder {
    * @returns {this}
    */
   reset(array = this.#dataArray) {
-    this.#functionQueue.enqueue({ type: "reset", param: array });
+    this.#enqueue({ type: "reset", param: array });
+    return this;
+  }
+
     return this;
   }
 
@@ -200,7 +212,7 @@ class BinaryDecoder {
    * @returns {this}
    */
   skip(numberOfBits) {
-    this.#functionQueue.enqueue({ type: "skip", param: numberOfBits });
+    this.#enqueue({ type: "skip", param: numberOfBits });
     return this;
   }
 
@@ -210,7 +222,7 @@ class BinaryDecoder {
    * @returns {this}
    */
   endianness(endian) {
-    this.#functionQueue.enqueue({ type: "endianness", param: endian });
+    this.#enqueue({ type: "endianness", param: endian });
     return this;
   }
 
@@ -220,7 +232,7 @@ class BinaryDecoder {
    * @returns {this}
    */
   registerSize(registerSizeInBits) {
-    this.#functionQueue.enqueue({
+    this.#enqueue({
       type: "registerSize",
       param: registerSizeInBits,
     });
@@ -233,7 +245,7 @@ class BinaryDecoder {
    * @returns {this}
    */
   parseUnfinished(choice) {
-    this.#functionQueue.enqueue({ type: "parseUnfinished", param: choice });
+    this.#enqueue({ type: "parseUnfinished", param: choice });
     return this;
   }
 
@@ -243,7 +255,7 @@ class BinaryDecoder {
    * @returns
    */
   goBack(numberOfBits) {
-    this.#functionQueue.enqueue({ type: "goBack", param: numberOfBits });
+    this.#enqueue({ type: "goBack", param: numberOfBits });
     return this;
   }
 
@@ -258,13 +270,24 @@ class BinaryDecoder {
    * @returns {this}
    */
   next(sizeInBits, name, options = {}) {
-    this.#functionQueue.enqueue({
+    this.#enqueue({
       type: "next",
       param: [sizeInBits, name, options],
     });
     return this;
   }
 
+  /**
+   *
+   * @param {{}} entry
+   */
+  #enqueue(entry) {
+    if (
+      this.#functionQueue.size() === 0 ||
+      this.#functionQueue.peek().type !== "choice"
+    )
+      this.#functionQueue.enqueue(entry);
+  }
 
   #mappings = {
     skip: this.#execSkip,
@@ -276,12 +299,19 @@ class BinaryDecoder {
     parseUnfinished: this.#execParseUnfinished,
   };
 
+  /**
+   *
+   * @returns {this}
+   */
   exec() {
     while (this.#functionQueue.size()) this.execNextStep();
-
     return this;
   }
 
+  /**
+   *
+   * @returns {this}
+   */
   execNextStep() {
     if (this.#functionQueue.size()) {
       const { type, param } = this.#functionQueue.dequeue();
