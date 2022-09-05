@@ -24,7 +24,9 @@
     "url": "https://github.com/YHatahet/BinaryDecoder/issues"
   },
   "homepage": "https://github.com/YHatahet/BinaryDecoder#readme",
+  "pre-commit": "test",
   "devDependencies": {
+    "pre-commit": "^1.2.2",
     "pta": "^1.1.2",
     "zora": "^5.0.4"
   },
