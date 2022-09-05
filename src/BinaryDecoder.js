@@ -41,6 +41,7 @@ class BinaryDecoder {
     skip: this.#execSkip,
     reset: this.#execReset,
     goBack: this.#execGoBack,
+    choice: this.#execChoice,
     endianness: this.#execEndianness,
     registerSize: this.#execRegisterSize,
     parseUnfinished: this.#execParseUnfinished,
@@ -130,6 +131,25 @@ class BinaryDecoder {
 
   #execParseUnfinished(choice) {
     this.#parseUnfinished = choice;
+  }
+
+  dequeue() {
+    try {
+      //TODO check if this returns an error normally
+      return this.#functionQueue.dequeue();
+    } catch (e) {}
+  }
+
+  #execChoice(key, paths) {
+    /**
+     * dequeue the options from the paths and place them in this current function queue (until we reach choice)
+     */
+    const newParser = paths[this.result[key]] || paths.default; // ? || EmptyChainedDecoder()
+    let res;
+    do {
+      res = newParser.dequeue();
+      if (res) this.#enqueue(res);
+    } while (res);
   }
 
   #execNext(sizeInBits, name, options) {
@@ -289,15 +309,18 @@ class BinaryDecoder {
       this.#functionQueue.enqueue(entry);
   }
 
-  #mappings = {
-    skip: this.#execSkip,
-    next: this.#execNext,
-    reset: this.#execReset,
-    goBack: this.#execGoBack,
-    endianness: this.#execEndianness,
-    registerSize: this.#execRegisterSize,
-    parseUnfinished: this.#execParseUnfinished,
-  };
+  /**
+   *
+   * @param {String} key
+   * @param {{<String | Number>: <BinaryDecoder | EmptyChainedDecoder>}} paths keys whose values are parsers
+   */
+  choice(key, paths = {}) {
+    this.#enqueue({
+      type: "choice",
+      param: [key, paths],
+    });
+    return this;
+  }
 
   /**
    *
@@ -315,7 +338,7 @@ class BinaryDecoder {
   execNextStep() {
     if (this.#functionQueue.size()) {
       const { type, param } = this.#functionQueue.dequeue();
-      type === "next"
+      type === "next" || type === "choice"
         ? this.#mappings[type].bind(this)(...param)
         : this.#mappings[type].bind(this)(param);
     }

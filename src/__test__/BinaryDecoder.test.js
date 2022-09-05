@@ -136,7 +136,52 @@ test("Testing save condition option", (t) => {
 
   t.equal(output1, expected1, "");
 });
-  expect(output1).toStrictEqual(expected1);
+
+test("Testing 'choice' option", (t) => {
+  const data = [1, 2, 3, 4];
+
+  const BD = new BinaryDecoder(data);
+
+  const addTen = (val) => val + 10;
+
+  const parser1 = new BinaryDecoder().next(8, "a").next(8, "b");
+  const parser2 = new BinaryDecoder().next(16, "c");
+
+  // on selected choice
+  const output1 = BD.next(8, "firstByte")
+    .next(8, "secondByte", { formatter: addTen })
+    .choice("firstByte", {
+      1: parser1,
+      default: parser2,
+    })
+    .exec().result;
+
+  const expected1 = {
+    firstByte: 1,
+    secondByte: 12,
+    a: 3,
+    b: 4,
+  };
+
+  t.equal(output1, expected1, "");
+
+  // on default choice
+  const output2 = BD.next(8, "firstByte")
+    .next(8, "secondByte", { formatter: addTen })
+    .choice("firstByte", {
+      1: parser1,
+      default: parser2,
+    })
+    .exec().result;
+
+  const expected2 = {
+    firstByte: 1,
+    secondByte: 12,
+    a: 3,
+    b: 4,
+  };
+  t.equal(output2, expected2, "");
+});
 
 test("Testing formatter function option", (t) => {
   const data = [12, 34, 56, 78];
