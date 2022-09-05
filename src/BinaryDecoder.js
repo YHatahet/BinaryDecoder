@@ -8,6 +8,7 @@ const Queue = require("queue-fifo");
  */
 class BinaryDecoder {
   constructor(array) {
+    this.#functionQueue = new Queue();
     this.#init(array);
   }
 
@@ -18,7 +19,6 @@ class BinaryDecoder {
   /**@type {Number} */ #bitIndex;
   /**@type {Number} */ #dataArray;
   /**@type {Queue} */ #functionQueue;
-  /**@type {Number} */ #functionIndex;
   /**@type {Boolean} */ #parseUnfinished;
   /**@type {String} */ #binaryEquivalent;
   /**@type {Number} */ #registerSizeInBits;
@@ -36,7 +36,6 @@ class BinaryDecoder {
     this.#dataArray = array;
     this.#registerSizeInBits = 8;
     this.#parseUnfinished = false;
-    this.#functionQueue = new Queue();
     this.#binaryEquivalent = this.#arrToBinaryString(
       array,
       this.#registerSizeInBits
@@ -139,6 +138,13 @@ class BinaryDecoder {
     // Formatter
     if (typeof options.formatter === "function") {
       val = options.formatter(val);
+    }
+    // Continue Condition : if condition is false, stops parsing what's left
+    if (
+      typeof options.continueCondition === "function" &&
+      !options.continueCondition(val)
+    ) {
+      return new EmptyChainedDecoder(); // return an object whose "next" is valid but does nothing
     }
     // Save Condition
     if (
@@ -265,7 +271,7 @@ class BinaryDecoder {
   execNextStep() {
     if (this.#functionQueue.size()) {
       const { type, param } = this.#functionQueue.dequeue();
-      Array.isArray(param)
+      type === "next"
         ? this.#mappings[type].bind(this)(...param)
         : this.#mappings[type].bind(this)(param);
     }
