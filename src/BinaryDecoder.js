@@ -3,8 +3,8 @@
 const Queue = require("queue-fifo");
 
 /**
- * A Class providing an "empty" functions which can
- * be called endlessly/chained without errors
+ * A Class providing "empty" functions which can
+ * be called endlessly, or in a chained manner, without errors
  */
 class EmptyChainedDecoder {
   emptyReturn = () => this;
@@ -19,7 +19,8 @@ class EmptyChainedDecoder {
 
 /**
  *
- * @param {number[]} array
+ * @param {number[]} array Numeric array of registers,
+ * the properties of which can be set via the instance methods.
  */
 class BinaryDecoder {
   constructor(array = []) {
@@ -50,8 +51,9 @@ class BinaryDecoder {
 
 
   // ================= Private functions =================
+
   /**
-   * Initialize default private parameters and chained decoder class
+   * Initialize default private parameters and chained decoder instance.
    * @param {number[]} array
    */
   #init(array) {
@@ -133,12 +135,13 @@ class BinaryDecoder {
   #execParseUnfinished(choice) {
     this.#parseUnfinished = choice;
   }
-
-  dequeue() {
-    try {
-      //TODO check if this returns an error normally
-      return this.#functionQueue.dequeue();
-    } catch (e) {}
+  /**
+   * Not to be used outside!
+   * Will dequeue the first entry/option to the queue.
+   * @returns { Object | null}
+   */
+  _functionDequeue() {
+    return this.#functionQueue.dequeue();
   }
 
   #execChoice(key, paths) {
@@ -148,7 +151,7 @@ class BinaryDecoder {
     const newParser = paths[this.result[key]] || paths.default; // ? || EmptyChainedDecoder()
     let res;
     do {
-      res = newParser.dequeue();
+      res = newParser._functionDequeue();
       if (res) this.#enqueue(res);
     } while (res);
   }
@@ -269,7 +272,7 @@ class BinaryDecoder {
 
   /**
    *
-   * @param {*} numberOfBits
+   * @param {Number} numberOfBits
    * @returns
    */
   goBack(numberOfBits) {
