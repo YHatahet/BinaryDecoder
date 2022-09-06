@@ -10,6 +10,7 @@ class EmptyChainedDecoder {
   emptyReturn = () => this;
   next = this.emptyReturn;
   skip = this.emptyReturn;
+  reset = this.emptyReturn;
   endianness = this.emptyReturn;
   registerSize = this.emptyReturn;
   parseUnfinished = this.emptyReturn;
@@ -21,7 +22,7 @@ class EmptyChainedDecoder {
  * @param {number[]} array
  */
 class BinaryDecoder {
-  constructor(array) {
+  constructor(array = []) {
     this.#functionQueue = new Queue();
     this.#init(array);
   }
@@ -220,9 +221,6 @@ class BinaryDecoder {
    */
   reset(array = this.#dataArray) {
     this.#enqueue({ type: "reset", param: array });
-    return this;
-  }
-
     return this;
   }
 
