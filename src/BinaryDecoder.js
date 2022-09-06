@@ -111,6 +111,20 @@ class BinaryDecoder {
     return unsignedNumber;
   }
 
+  /**
+   *
+   * @param {Object} entry
+   * @param {String} entry.type
+   * @param {Any} entry.param
+   */
+  #enqueue(entry) {
+    if (
+      this.#functionQueue.size() === 0 ||
+      this.#functionQueue.peek().type !== "choice"
+    )
+      this.#functionQueue.enqueue(entry);
+  }
+
   #execReset(array) {
     this.#init(array);
   }
@@ -134,14 +148,6 @@ class BinaryDecoder {
 
   #execParseUnfinished(choice) {
     this.#parseUnfinished = choice;
-  }
-  /**
-   * Not to be used outside!
-   * Will dequeue the first entry/option to the queue.
-   * @returns { Object | null}
-   */
-  _functionDequeue() {
-    return this.#functionQueue.dequeue();
   }
 
   #execChoice(key, paths) {
@@ -204,6 +210,15 @@ class BinaryDecoder {
     if (val !== undefined) this.#result[name] = val;
 
     this.#bitIndex = end;
+  }
+
+  /**
+   * Not to be used outside!
+   * Will dequeue the first entry/option to the queue.
+   * @returns { Object | null}
+   */
+  _functionDequeue() {
+    return this.#functionQueue.dequeue();
   }
 
   // ================= Getter functions =================
@@ -301,18 +316,6 @@ class BinaryDecoder {
 
   /**
    *
-   * @param {{}} entry
-   */
-  #enqueue(entry) {
-    if (
-      this.#functionQueue.size() === 0 ||
-      this.#functionQueue.peek().type !== "choice"
-    )
-      this.#functionQueue.enqueue(entry);
-  }
-
-  /**
-   *
    * @param {String} key
    * @param {{<String | Number>: <BinaryDecoder | EmptyChainedDecoder>}} paths keys whose values are parsers
    */
@@ -329,7 +332,7 @@ class BinaryDecoder {
    * @returns {this}
    */
   exec() {
-    while (this.#functionQueue.size()) this.execNextStep();
+    while (this.#functionQueue.size()) this.execOne();
     return this;
   }
 
@@ -337,7 +340,7 @@ class BinaryDecoder {
    *
    * @returns {this}
    */
-  execNextStep() {
+  execOne() {
     if (this.#functionQueue.size()) {
       const { type, param } = this.#functionQueue.dequeue();
       type === "next" || type === "choice"
