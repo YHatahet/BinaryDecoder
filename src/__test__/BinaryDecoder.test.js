@@ -183,6 +183,35 @@ test("Testing 'choice' option", (t) => {
   t.equal(output2, expected2, "");
 });
 
+test("Testing 'choice' option when chained to another 'choice'", (t) => {
+  const data = [1, 2, 3, 4];
+
+  const BD = new BinaryDecoder(data);
+
+  const parser1 = new BinaryDecoder().next(16, "thirdAndFourthBytes");
+
+  const parser2 = new BinaryDecoder()
+    .next(8, "secondByte")
+    .choice("firstByte", {
+      1: parser1,
+    });
+
+  const output1 = BD.next(8, "firstByte")
+    .choice("firstByte", {
+      1: parser2,
+      default: parser2,
+    })
+    .exec().result;
+
+  const expected1 = {
+    firstByte: 1,
+    secondByte: 2,
+    thirdAndFourthBytes: (3 << 8) + 4,
+  };
+
+  t.equal(output1, expected1, "");
+});
+
 test("Testing formatter function option", (t) => {
   const data = [12, 34, 56, 78];
 
