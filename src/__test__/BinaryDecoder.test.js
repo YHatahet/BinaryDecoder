@@ -212,6 +212,30 @@ test("Testing 'choice' option when chained to another 'choice'", (t) => {
   t.equal(output1, expected1, "");
 });
 
+test("Testing 'goBack' option", (t) => {
+  const data = [12, 34, 56, 78];
+
+  const BD = new BinaryDecoder(data);
+
+  const output1 = BD.next(8, "firstByte")
+    .next(8, "secondByte")
+    .goBack(8)
+    .next(8, "secondByteAgain")
+    .next(8, "thirdByte")
+    .next(8, "fourthByte")
+    .exec().result;
+
+  const expected1 = {
+    firstByte: 12,
+    secondByte: 34,
+    secondByteAgain: 34,
+    thirdByte: 56,
+    fourthByte: 78,
+  };
+
+  t.equal(output1, expected1, "");
+});
+
 test("Testing formatter function option", (t) => {
   const data = [12, 34, 56, 78];
 
