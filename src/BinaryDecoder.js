@@ -144,19 +144,6 @@ class BinaryDecoder {
     this.#parseUnfinished = choice;
   }
 
-  #execChoice(key, paths) {
-    /**
-     * dequeue the options from the paths and place them in this current function queue (until we reach choice)
-     */
-    const newParser =
-      paths[this.result[key]] || paths.default || new EmptyChainedDecoder();
-    let res;
-    do {
-      res = newParser._functionDequeue();
-      if (res) this.#functionQueue.push(res);
-    } while (res);
-  }
-
   #execNext(sizeInBits, name, options) {
     // Stop if there's no more data to parse
     if (this.#bitIndex >= this.#binaryEquivalent.length) return this;
@@ -206,13 +193,26 @@ class BinaryDecoder {
     this.#bitIndex = end;
   }
 
+  #execChoice(key, paths) {
+    /**
+     * dequeue the options from the paths and place them in this current function queue (until we reach choice)
+     */
+    const newParser =
+      paths[this.result[key]] || paths.default || new EmptyChainedDecoder();
+    let res;
+    do {
+      res = newParser._functionPop();
+      if (res) this.#functionQueue.unshift(res);
+    } while (res);
+  }
+
   /**
    * Not to be used outside!
    * Will dequeue the first entry/option to the queue.
    * @returns { Object | null}
    */
-  _functionDequeue() {
-    return this.#functionQueue.shift();
+  _functionPop() {
+    return this.#functionQueue.pop();
   }
 
   // ================= Getter functions =================

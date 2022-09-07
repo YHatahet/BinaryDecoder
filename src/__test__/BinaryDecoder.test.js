@@ -1,17 +1,17 @@
-const BinaryDecoder = require("../BinaryDecoder");
+const BD = require("../BinaryDecoder");
 const { test } = require("zora");
 
 test("Testing 'skip' method", (t) => {
   const data = [0xf0, 0x0f, 0xff, 0x00];
 
-  const BD = new BinaryDecoder(data)
+  const bd = new BD(data)
     .skip(4) // skip first half
     .next(4, "secondHalfOfFirstByte")
     .skip(8) // second byte
     .next(16, "_3rdAnd4thBytes")
     .exec();
 
-  const output = BD.result;
+  const output = bd.result;
 
   const expected = {
     secondHalfOfFirstByte: 0,
@@ -24,9 +24,10 @@ test("Testing 'skip' method", (t) => {
 test("Testing basic 'next' method", (t) => {
   const data = [255, 0, 0, 255];
 
-  const BD = new BinaryDecoder(data);
+  const bd = new BD(data);
 
-  const output1 = BD.next(8, "firstByte")
+  const output1 = bd
+    .next(8, "firstByte")
     .next(8, "secondByte")
     .next(8, "thirdByte")
     .next(8, "fourthByte")
@@ -41,7 +42,8 @@ test("Testing basic 'next' method", (t) => {
 
   t.equal(output1, expected1, "");
 
-  const output2 = BD.reset()
+  const output2 = bd
+    .reset()
     .next(16, "firstHalf")
     .next(16, "secondHalf")
     .exec().result;
@@ -57,9 +59,10 @@ test("Testing basic 'next' method", (t) => {
 test("Testing the parsing of unfinished data", (t) => {
   const data = [0xf0, 0x0f, 0xff, 0xaa];
 
-  const BD = new BinaryDecoder(data);
+  const bd = new BD(data);
 
-  const output1 = BD.skip(3 * 8) // skip 3 bytes
+  const output1 = bd
+    .skip(3 * 8) // skip 3 bytes
     .next(6, "first6Bits")
     .next(3, "shouldntExist")
     .exec().result;
@@ -71,7 +74,8 @@ test("Testing the parsing of unfinished data", (t) => {
   // Should not parse unfinished data
   t.equal(output1, expected1, "");
 
-  const output2 = BD.reset() // re-parse the same array
+  const output2 = bd
+    .reset() // re-parse the same array
     .parseUnfinished(true) // false by default, set as true
     .skip(3 * 8) // skip 3 bytes
     .next(6, "first6Bits")
@@ -90,11 +94,12 @@ test("Testing the parsing of unfinished data", (t) => {
 test("Testing formatter function option", (t) => {
   const data = [12, 34, 56, 78];
 
-  const BD = new BinaryDecoder(data);
+  const bd = new BD(data);
 
   const addTen = (val) => val + 10;
 
-  const output1 = BD.next(8, "firstByte", { formatter: addTen })
+  const output1 = bd
+    .next(8, "firstByte", { formatter: addTen })
     .next(8, "secondByte", { formatter: addTen })
     .next(8, "thirdByte", { formatter: addTen })
     .next(8, "fourthByte", { formatter: addTen })
@@ -113,11 +118,12 @@ test("Testing formatter function option", (t) => {
 test("Testing save condition option", (t) => {
   const data = [12, 34, 56, 78];
 
-  const BD = new BinaryDecoder(data);
+  const bd = new BD(data);
 
   const addTen = (val) => val + 10;
 
-  const output1 = BD.next(8, "firstByte", { saveCondition: (val) => val > 3 }) // should save
+  const output1 = bd
+    .next(8, "firstByte", { saveCondition: (val) => val > 3 }) // should save
     .next(8, "secondByte", { saveCondition: (val) => val < 3 }) // shouldn't save
     .next(8, "thirdByte", {
       formatter: addTen,
@@ -140,15 +146,16 @@ test("Testing save condition option", (t) => {
 test("Testing 'choice' option", (t) => {
   const data = [1, 2, 3, 4];
 
-  const BD = new BinaryDecoder(data);
+  const bd = new BD(data);
 
   const addTen = (val) => val + 10;
 
-  const parser1 = new BinaryDecoder().next(8, "a").next(8, "b");
-  const parser2 = new BinaryDecoder().next(16, "c");
+  const parser1 = new BD().next(8, "a").next(8, "b");
+  const parser2 = new BD().next(16, "c");
 
   // on selected choice
-  const output1 = BD.next(8, "firstByte")
+  const output1 = bd
+    .next(8, "firstByte")
     .next(8, "secondByte", { formatter: addTen })
     .choice("firstByte", {
       1: parser1,
@@ -166,7 +173,8 @@ test("Testing 'choice' option", (t) => {
   t.equal(output1, expected1, "");
 
   // on default choice
-  const output2 = BD.next(8, "firstByte")
+  const output2 = bd
+    .next(8, "firstByte")
     .next(8, "secondByte", { formatter: addTen })
     .choice("firstByte", {
       1: parser1,
@@ -186,17 +194,16 @@ test("Testing 'choice' option", (t) => {
 test("Testing 'choice' option when chained to another 'choice'", (t) => {
   const data = [1, 2, 3, 4];
 
-  const BD = new BinaryDecoder(data);
+  const bd = new BD(data);
 
-  const parser1 = new BinaryDecoder().next(16, "thirdAndFourthBytes");
+  const parser1 = new BD().next(16, "thirdAndFourthBytes");
 
-  const parser2 = new BinaryDecoder()
-    .next(8, "secondByte")
-    .choice("firstByte", {
-      1: parser1,
-    });
+  const parser2 = new BD().next(8, "secondByte").choice("firstByte", {
+    1: parser1,
+  });
 
-  const output1 = BD.next(8, "firstByte")
+  const output1 = bd
+    .next(8, "firstByte")
     .choice("firstByte", {
       1: parser2,
       default: parser2,
@@ -212,12 +219,39 @@ test("Testing 'choice' option when chained to another 'choice'", (t) => {
   t.equal(output1, expected1, "");
 });
 
+test("Chaining 'choice' options in the same expression", (t) => {
+  const data = [1, 2, 3, 4];
+
+  const bd = new BD(data);
+
+  const output1 = bd
+    .next(8, "first")
+    .choice("first", {
+      1: new BD().next(8, "second", { formatter: (val) => val + 1 }),
+      default: new BD().next(8, "second"),
+    })
+    .choice("second", {
+      3: new BD().next(8, "third", { formatter: (val) => val + 1 }),
+      default: new BD().next(8, "third", { formatter: (val) => val + 2 }),
+    })
+    .exec().result;
+
+  const expected1 = {
+    first: 1,
+    second: 3,
+    third: 4,
+  };
+
+  t.equal(output1, expected1, "");
+});
+
 test("Testing 'goBack' option", (t) => {
   const data = [12, 34, 56, 78];
 
-  const BD = new BinaryDecoder(data);
+  const bd = new BD(data);
 
-  const output1 = BD.next(8, "firstByte")
+  const output1 = bd
+    .next(8, "firstByte")
     .next(8, "secondByte")
     .goBack(8)
     .next(8, "secondByteAgain")
@@ -239,11 +273,12 @@ test("Testing 'goBack' option", (t) => {
 test("Testing formatter function option", (t) => {
   const data = [12, 34, 56, 78];
 
-  const BD = new BinaryDecoder(data);
+  const bd = new BD(data);
 
   const addTen = (val) => val + 10;
 
-  const output1 = BD.next(8, "firstByte", { formatter: addTen })
+  const output1 = bd
+    .next(8, "firstByte", { formatter: addTen })
     .next(8, "secondByte", { formatter: addTen })
     .next(8, "thirdByte", { formatter: addTen })
     .next(8, "fourthByte", { formatter: addTen })
@@ -272,9 +307,10 @@ test("Testing real life data from Teltonika device", (t) => {
     128,
   ];
 
-  const BD = new BinaryDecoder(data);
+  const bd = new BD(data);
 
-  const output1 = BD.skip(16)
+  const output1 = bd
+    .skip(16)
     .next(24, "latitude", { formatter: latLongFormatter, signedness: "signed" })
     .next(25, "longitude", {
       formatter: latLongFormatter,
