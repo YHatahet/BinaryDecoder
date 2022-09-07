@@ -31,6 +31,6 @@
     "zora": "^5.0.4"
   },
   "dependencies": {
-    "queue-fifo": "^0.2.6"
+    "dequeue": "^1.0.5"
   }
 }

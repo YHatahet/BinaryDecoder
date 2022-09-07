@@ -1,6 +1,15 @@
 "use strict";
 
-const Queue = require("queue-fifo");
+/** nodejs  | Python
+ *
+ * appendleft == unshift
+ * append (right) == push
+ * popleft == shift
+ * pop (right) == pop
+ *
+ * use push with shift, unshift with pop
+ */
+const DQ = require("dequeue");
 
 /**
  * A Class providing "empty" functions which can
@@ -24,7 +33,7 @@ class EmptyChainedDecoder {
  */
 class BinaryDecoder {
   constructor(array = []) {
-    this.#functionQueue = new Queue();
+    this.#functionQueue = new DQ();
     this.#init(array);
   }
 
@@ -48,7 +57,6 @@ class BinaryDecoder {
     registerSize: this.#execRegisterSize,
     parseUnfinished: this.#execParseUnfinished,
   };
-
 
   // ================= Private functions =================
 
@@ -111,20 +119,6 @@ class BinaryDecoder {
     return unsignedNumber;
   }
 
-  /**
-   *
-   * @param {Object} entry
-   * @param {String} entry.type
-   * @param {Any} entry.param
-   */
-  #enqueue(entry) {
-    if (
-      this.#functionQueue.size() === 0 ||
-      this.#functionQueue.peek().type !== "choice"
-    )
-      this.#functionQueue.enqueue(entry);
-  }
-
   #execReset(array) {
     this.#init(array);
   }
@@ -148,19 +142,6 @@ class BinaryDecoder {
 
   #execParseUnfinished(choice) {
     this.#parseUnfinished = choice;
-  }
-
-  #execChoice(key, paths) {
-    /**
-     * dequeue the options from the paths and place them in this current function queue (until we reach choice)
-     */
-    const newParser =
-      paths[this.result[key]] || paths.default || EmptyChainedDecoder();
-    let res;
-    do {
-      res = newParser._functionDequeue();
-      if (res) this.#enqueue(res);
-    } while (res);
   }
 
   #execNext(sizeInBits, name, options) {
@@ -212,13 +193,26 @@ class BinaryDecoder {
     this.#bitIndex = end;
   }
 
+  #execChoice(key, paths) {
+    /**
+     * dequeue the options from the paths and place them in this current function queue (until we reach choice)
+     */
+    const newParser =
+      paths[this.result[key]] || paths.default || new EmptyChainedDecoder();
+    let res;
+    do {
+      res = newParser._functionPop();
+      if (res) this.#functionQueue.unshift(res);
+    } while (res);
+  }
+
   /**
    * Not to be used outside!
    * Will dequeue the first entry/option to the queue.
    * @returns { Object | null}
    */
-  _functionDequeue() {
-    return this.#functionQueue.dequeue();
+  _functionPop() {
+    return this.#functionQueue.pop();
   }
 
   // ================= Getter functions =================
@@ -239,7 +233,7 @@ class BinaryDecoder {
    * @returns {this}
    */
   reset(array = this.#dataArray) {
-    this.#enqueue({ type: "reset", param: array });
+    this.#functionQueue.push({ type: "reset", param: array });
     return this;
   }
 
@@ -249,7 +243,7 @@ class BinaryDecoder {
    * @returns {this}
    */
   skip(numberOfBits) {
-    this.#enqueue({ type: "skip", param: numberOfBits });
+    this.#functionQueue.push({ type: "skip", param: numberOfBits });
     return this;
   }
 
@@ -259,7 +253,7 @@ class BinaryDecoder {
    * @returns {this}
    */
   endianness(endian) {
-    this.#enqueue({ type: "endianness", param: endian });
+    this.#functionQueue.push({ type: "endianness", param: endian });
     return this;
   }
 
@@ -269,7 +263,7 @@ class BinaryDecoder {
    * @returns {this}
    */
   registerSize(registerSizeInBits) {
-    this.#enqueue({
+    this.#functionQueue.push({
       type: "registerSize",
       param: registerSizeInBits,
     });
@@ -282,7 +276,7 @@ class BinaryDecoder {
    * @returns {this}
    */
   parseUnfinished(choice) {
-    this.#enqueue({ type: "parseUnfinished", param: choice });
+    this.#functionQueue.push({ type: "parseUnfinished", param: choice });
     return this;
   }
 
@@ -292,7 +286,7 @@ class BinaryDecoder {
    * @returns
    */
   goBack(numberOfBits) {
-    this.#enqueue({ type: "goBack", param: numberOfBits });
+    this.#functionQueue.push({ type: "goBack", param: numberOfBits });
     return this;
   }
 
@@ -307,7 +301,7 @@ class BinaryDecoder {
    * @returns {this}
    */
   next(sizeInBits, name, options = {}) {
-    this.#enqueue({
+    this.#functionQueue.push({
       type: "next",
       param: [sizeInBits, name, options],
     });
@@ -320,7 +314,7 @@ class BinaryDecoder {
    * @param {{<String | Number>: <BinaryDecoder | EmptyChainedDecoder>}} paths keys whose values are parsers
    */
   choice(key, paths = {}) {
-    this.#enqueue({
+    this.#functionQueue.push({
       type: "choice",
       param: [key, paths],
     });
@@ -332,7 +326,7 @@ class BinaryDecoder {
    * @returns {this}
    */
   exec() {
-    while (this.#functionQueue.size()) this.execOne();
+    while (this.#functionQueue.length) this.execOne();
     return this;
   }
 
@@ -341,8 +335,8 @@ class BinaryDecoder {
    * @returns {this}
    */
   execOne() {
-    if (this.#functionQueue.size()) {
-      const { type, param } = this.#functionQueue.dequeue();
+    if (this.#functionQueue.length) {
+      const { type, param } = this.#functionQueue.shift();
       type === "next" || type === "choice"
         ? this.#mappings[type].bind(this)(...param)
         : this.#mappings[type].bind(this)(param);
