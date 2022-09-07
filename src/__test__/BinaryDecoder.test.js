@@ -234,12 +234,14 @@ test("Chaining 'choice' options in the same expression", (t) => {
       3: new BD().next(8, "third", { formatter: (val) => val + 1 }),
       default: new BD().next(8, "third", { formatter: (val) => val + 2 }),
     })
+    .next(8, "fourth")
     .exec().result;
 
   const expected1 = {
     first: 1,
     second: 3,
     third: 4,
+    fourth: 4,
   };
 
   t.equal(output1, expected1, "");
