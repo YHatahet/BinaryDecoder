@@ -198,7 +198,7 @@ class BinaryDecoder {
      * dequeue the options from the paths and place them in this current function queue (until we reach choice)
      */
     const newParser =
-      paths[this.result[key]] || paths.default || new EmptyChainedDecoder();
+      paths[this.#result[key]] || paths.default || new EmptyChainedDecoder();
     let res;
     do {
       res = newParser._functionPop();
