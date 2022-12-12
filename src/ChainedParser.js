@@ -1,14 +1,5 @@
 "use strict";
 
-/** nodejs  | Python
- *
- * appendleft == unshift
- * append (right) == push
- * popleft == shift
- * pop (right) == pop
- *
- * use push with shift, unshift with pop
- */
 const DQ = require("dequeue");
 
 /**
