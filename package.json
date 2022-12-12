@@ -1,5 +1,5 @@
 {
-  "name": "binarydecoder",
+  "name": "@yhatahet/binarydecoder",
   "version": "1.0.0",
   "description": "Decodes binary data sequentially",
   "main": "index.js",
