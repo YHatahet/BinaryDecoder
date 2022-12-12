@@ -201,18 +201,9 @@ class BinaryDecoder {
       paths[this.#result[key]] || paths.default || new EmptyChainedDecoder();
     let res;
     do {
-      res = newParser._functionPop();
+      res = newParser.#functionQueue.pop();
       if (res) this.#functionQueue.unshift(res);
     } while (res);
-  }
-
-  /**
-   * Not to be used outside!
-   * Will dequeue the first entry/option to the queue.
-   * @returns { Object | null}
-   */
-  _functionPop() {
-    return this.#functionQueue.pop();
   }
 
   // ================= Getter functions =================
