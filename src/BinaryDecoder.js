@@ -218,10 +218,11 @@ class BinaryDecoder {
   // ================= Getter functions =================
 
   /**
-   * Fetches the result of the parsing process
+   * Executes and fetches the result of the parsing process
    * @returns {Object}
    */
   get result() {
+    this.exec();
     return this.#result;
   }
 

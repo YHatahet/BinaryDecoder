@@ -31,7 +31,7 @@ test("Testing basic 'next' method", (t) => {
     .next(8, "secondByte")
     .next(8, "thirdByte")
     .next(8, "fourthByte")
-    .exec().result;
+    .result;
 
   const expected1 = {
     firstByte: 255,
@@ -46,7 +46,7 @@ test("Testing basic 'next' method", (t) => {
     .reset()
     .next(16, "firstHalf")
     .next(16, "secondHalf")
-    .exec().result;
+    .result;
 
   const expected2 = {
     firstHalf: 65280,
@@ -65,7 +65,7 @@ test("Testing the parsing of unfinished data", (t) => {
     .skip(3 * 8) // skip 3 bytes
     .next(6, "first6Bits")
     .next(3, "shouldntExist")
-    .exec().result;
+    .result;
 
   const expected1 = {
     first6Bits: 0b101010,
@@ -80,7 +80,7 @@ test("Testing the parsing of unfinished data", (t) => {
     .skip(3 * 8) // skip 3 bytes
     .next(6, "first6Bits")
     .next(3, "unfinishedData")
-    .exec().result;
+    .result;
 
   const expected2 = {
     first6Bits: 0b101010,
@@ -103,7 +103,7 @@ test("Testing formatter function option", (t) => {
     .next(8, "secondByte", { formatter: addTen })
     .next(8, "thirdByte", { formatter: addTen })
     .next(8, "fourthByte", { formatter: addTen })
-    .exec().result;
+    .result;
 
   const expected1 = {
     firstByte: 22,
@@ -133,7 +133,7 @@ test("Testing save condition option", (t) => {
       formatter: addTen,
       saveCondition: (val) => val < 3,
     })
-    .exec().result; // shouldn't save
+    .result; // shouldn't save
 
   const expected1 = {
     firstByte: 12,
@@ -161,7 +161,7 @@ test("Testing 'choice' option", (t) => {
       1: parser1,
       default: parser2,
     })
-    .exec().result;
+    .result;
 
   const expected1 = {
     firstByte: 1,
@@ -180,7 +180,7 @@ test("Testing 'choice' option", (t) => {
       1: parser1,
       default: parser2,
     })
-    .exec().result;
+    .result;
 
   const expected2 = {
     firstByte: 1,
@@ -208,7 +208,7 @@ test("Testing 'choice' option when chained to another 'choice'", (t) => {
       1: parser2,
       default: parser2,
     })
-    .exec().result;
+    .result;
 
   const expected1 = {
     firstByte: 1,
@@ -234,8 +234,7 @@ test("Chaining 'choice' options in the same expression", (t) => {
       3: new BD().next(8, "third", { formatter: (val) => val + 1 }),
       default: new BD().next(8, "third", { formatter: (val) => val + 2 }),
     })
-    .next(8, "fourth")
-    .exec().result;
+    .next(8, "fourth").result;
 
   const expected1 = {
     first: 1,
@@ -259,7 +258,7 @@ test("Testing 'goBack' option", (t) => {
     .next(8, "secondByteAgain")
     .next(8, "thirdByte")
     .next(8, "fourthByte")
-    .exec().result;
+    .result;
 
   const expected1 = {
     firstByte: 12,
@@ -284,7 +283,7 @@ test("Testing formatter function option", (t) => {
     .next(8, "secondByte", { formatter: addTen })
     .next(8, "thirdByte", { formatter: addTen })
     .next(8, "fourthByte", { formatter: addTen })
-    .exec().result;
+    .result;
 
   const expected1 = {
     firstByte: 22,
@@ -328,7 +327,7 @@ test("Testing real life data from Teltonika device", (t) => {
     .next(32, "alarmSensor")
     .next(32, "immobilizer")
     .next(31, "engineState")
-    .exec().result;
+    .result;
 
   const expected1 = {
     latitude: 90,
