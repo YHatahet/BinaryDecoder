@@ -1,2 +1,4 @@
-# BinaryDecoder
-Decodes binary data sequentially
+# Chained Parser
+Decodes data sequentially
+
+

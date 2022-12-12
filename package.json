@@ -1,5 +1,5 @@
 {
-  "name": "binarydecoder",
+  "name": "chained-parser",
   "version": "1.0.0",
   "description": "Decodes binary data sequentially",
   "main": "index.js",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YHatahet/BinaryDecoder.git"
+    "url": "git+https://github.com/YHatahet/chained-parser.git"
   },
   "keywords": [
     "decoder",
@@ -21,9 +21,9 @@
   "author": "Yamen Hatahet",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/YHatahet/BinaryDecoder/issues"
+    "url": "https://github.com/YHatahet/chained-parser/issues"
   },
-  "homepage": "https://github.com/YHatahet/BinaryDecoder#readme",
+  "homepage": "https://github.com/YHatahet/chained-parser#readme",
   "pre-commit": "test",
   "devDependencies": {
     "pre-commit": "^1.2.2",
