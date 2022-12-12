@@ -15,7 +15,7 @@ const DQ = require("dequeue");
  * A Class providing "empty" functions which can
  * be called endlessly, or in a chained manner, without errors
  */
-class EmptyChainedDecoder {
+class EmptyChainedParser {
   emptyReturn = () => this;
   next = this.emptyReturn;
   skip = this.emptyReturn;
@@ -31,7 +31,7 @@ class EmptyChainedDecoder {
  * @param {number[]} array Numeric array of registers,
  * the properties of which can be set via the instance methods.
  */
-class BinaryDecoder {
+class ChainedParser {
   constructor(array = []) {
     this.#functionQueue = new DQ();
     this.#init(array);
@@ -179,7 +179,7 @@ class BinaryDecoder {
       typeof options.continueCondition === "function" &&
       !options.continueCondition(val)
     ) {
-      return new EmptyChainedDecoder(); // return an object whose "next" is valid but does nothing
+      return new EmptyChainedParser(); // return an object whose "next" is valid but does nothing
     }
     // Save Condition
     if (
@@ -198,7 +198,7 @@ class BinaryDecoder {
      * dequeue the options from the paths and place them in this current function queue (until we reach choice)
      */
     const newParser =
-      paths[this.#result[key]] || paths.default || new EmptyChainedDecoder();
+      paths[this.#result[key]] || paths.default || new EmptyChainedParser();
     let res;
     do {
       res = newParser.#functionQueue.pop();
@@ -303,7 +303,7 @@ class BinaryDecoder {
   /**
    *
    * @param {String} key
-   * @param {{<String | Number>: <BinaryDecoder | EmptyChainedDecoder>}} paths keys whose values are parsers
+   * @param {{<String | Number>: <ChainedParser | EmptyChainedParser>}} paths keys whose values are parsers
    */
   choice(key, paths = {}) {
     this.#functionQueue.push({
@@ -337,4 +337,4 @@ class BinaryDecoder {
   }
 }
 
-module.exports = BinaryDecoder;
+module.exports = ChainedParser;

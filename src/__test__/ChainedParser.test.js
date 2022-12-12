@@ -1,17 +1,17 @@
-const BD = require("../BinaryDecoder");
+const ChainedParser = require("../ChainedParser");
 const { test } = require("zora");
 
 test("Testing 'skip' method", (t) => {
   const data = [0xf0, 0x0f, 0xff, 0x00];
 
-  const bd = new BD(data)
+  const chainedParser = new ChainedParser(data)
     .skip(4) // skip first half
     .next(4, "secondHalfOfFirstByte")
     .skip(8) // second byte
     .next(16, "_3rdAnd4thBytes")
     .exec();
 
-  const output = bd.result;
+  const output = chainedParser.result;
 
   const expected = {
     secondHalfOfFirstByte: 0,
@@ -24,7 +24,7 @@ test("Testing 'skip' method", (t) => {
 test("Testing basic 'next' method", (t) => {
   const data = [255, 0, 0, 255];
 
-  const bd = new BD(data);
+  const bd = new ChainedParser(data);
 
   const output1 = bd
     .next(8, "firstByte")
@@ -59,7 +59,7 @@ test("Testing basic 'next' method", (t) => {
 test("Testing the parsing of unfinished data", (t) => {
   const data = [0xf0, 0x0f, 0xff, 0xaa];
 
-  const bd = new BD(data);
+  const bd = new ChainedParser(data);
 
   const output1 = bd
     .skip(3 * 8) // skip 3 bytes
@@ -94,7 +94,7 @@ test("Testing the parsing of unfinished data", (t) => {
 test("Testing formatter function option", (t) => {
   const data = [12, 34, 56, 78];
 
-  const bd = new BD(data);
+  const bd = new ChainedParser(data);
 
   const addTen = (val) => val + 10;
 
@@ -118,7 +118,7 @@ test("Testing formatter function option", (t) => {
 test("Testing save condition option", (t) => {
   const data = [12, 34, 56, 78];
 
-  const bd = new BD(data);
+  const bd = new ChainedParser(data);
 
   const addTen = (val) => val + 10;
 
@@ -146,12 +146,12 @@ test("Testing save condition option", (t) => {
 test("Testing 'choice' option", (t) => {
   const data = [1, 2, 3, 4];
 
-  const bd = new BD(data);
+  const bd = new ChainedParser(data);
 
   const addTen = (val) => val + 10;
 
-  const parser1 = new BD().next(8, "a").next(8, "b");
-  const parser2 = new BD().next(16, "c");
+  const parser1 = new ChainedParser().next(8, "a").next(8, "b");
+  const parser2 = new ChainedParser().next(16, "c");
 
   // on selected choice
   const output1 = bd
@@ -194,11 +194,11 @@ test("Testing 'choice' option", (t) => {
 test("Testing 'choice' option when chained to another 'choice'", (t) => {
   const data = [1, 2, 3, 4];
 
-  const bd = new BD(data);
+  const bd = new ChainedParser(data);
 
-  const parser1 = new BD().next(16, "thirdAndFourthBytes");
+  const parser1 = new ChainedParser().next(16, "thirdAndFourthBytes");
 
-  const parser2 = new BD().next(8, "secondByte").choice("firstByte", {
+  const parser2 = new ChainedParser().next(8, "secondByte").choice("firstByte", {
     1: parser1,
   });
 
@@ -222,17 +222,17 @@ test("Testing 'choice' option when chained to another 'choice'", (t) => {
 test("Chaining 'choice' options in the same expression", (t) => {
   const data = [1, 2, 3, 4];
 
-  const bd = new BD(data);
+  const bd = new ChainedParser(data);
 
   const output1 = bd
     .next(8, "first")
     .choice("first", {
-      1: new BD().next(8, "second", { formatter: (val) => val + 1 }),
-      default: new BD().next(8, "second"),
+      1: new ChainedParser().next(8, "second", { formatter: (val) => val + 1 }),
+      default: new ChainedParser().next(8, "second"),
     })
     .choice("second", {
-      3: new BD().next(8, "third", { formatter: (val) => val + 1 }),
-      default: new BD().next(8, "third", { formatter: (val) => val + 2 }),
+      3: new ChainedParser().next(8, "third", { formatter: (val) => val + 1 }),
+      default: new ChainedParser().next(8, "third", { formatter: (val) => val + 2 }),
     })
     .next(8, "fourth").result;
 
@@ -249,7 +249,7 @@ test("Chaining 'choice' options in the same expression", (t) => {
 test("Testing 'goBack' option", (t) => {
   const data = [12, 34, 56, 78];
 
-  const bd = new BD(data);
+  const bd = new ChainedParser(data);
 
   const output1 = bd
     .next(8, "firstByte")
@@ -274,7 +274,7 @@ test("Testing 'goBack' option", (t) => {
 test("Testing formatter function option", (t) => {
   const data = [12, 34, 56, 78];
 
-  const bd = new BD(data);
+  const bd = new ChainedParser(data);
 
   const addTen = (val) => val + 10;
 
@@ -308,7 +308,7 @@ test("Testing real life data from Teltonika device", (t) => {
     128,
   ];
 
-  const bd = new BD(data);
+  const bd = new ChainedParser(data);
 
   const output1 = bd
     .skip(16)

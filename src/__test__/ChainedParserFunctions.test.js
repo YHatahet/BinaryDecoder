@@ -1,7 +1,7 @@
 const {
   arrToBinaryString,
   unsignedToSignedBits,
-} = require("./BinaryDecoderFunctions");
+} = require("./ChainedParserFunctions");
 const { test } = require("zora");
 
 // Testing unsigned to signed transformations
