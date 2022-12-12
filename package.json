@@ -1,5 +1,5 @@
 {
-  "name": "@yhatahet/binarydecoder",
+  "name": "binarydecoder",
   "version": "1.0.0",
   "description": "Decodes binary data sequentially",
   "main": "index.js",
@@ -19,7 +19,7 @@
     "serial"
   ],
   "author": "Yamen Hatahet",
-  "license": "MIT",
+  "license": "ISC",
   "bugs": {
     "url": "https://github.com/YHatahet/BinaryDecoder/issues"
   },
