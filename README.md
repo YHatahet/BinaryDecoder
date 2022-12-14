@@ -1,5 +1,7 @@
 # Chained Parser
 
+## Introduction
+
 This parser is meant to handle data in the form of an `Array` or a `Buffer` object.
 This parser was built in order to reduce the repetitiveness of creating parsers, and to make modifications simple.
 
@@ -28,7 +30,7 @@ This parser was built in order to reduce the repetitiveness of creating parsers,
   const headingFormatter = (value) => value / 10;
 
   // Set up the parser
-  const parserResult = chainedParser
+  const parser = chainedParser
     .skip(16) // skip the first two bytes (constants)
     .next(24, "latitude", { formatter: latLongFormatter, signedness: "signed" })
     .next(25, "longitude", { formatter: latLongFormatter, signedness: "signed" })
@@ -41,8 +43,10 @@ This parser was built in order to reduce the repetitiveness of creating parsers,
     .skip(31).next(1, "doorSensor")
     .skip(31).next(1, "alarmSensor")
     .skip(31).next(1, "immobilizer")
-    .next(31, "engineState")
-    .result; // fetching the result immediately
+    .next(31, "engineState");
+
+  const parserResult = parser.result;
+  // Note: the .result can chained to the declaration to fetch results immediately
 
   /**
    * Expected Output:
@@ -65,34 +69,89 @@ This parser was built in order to reduce the repetitiveness of creating parsers,
 
 # API
 
-## .reset(newArray)
+## **.reset(newArray)**
 
-Reinitialize the decoder with new data
+Reinitialize the decoder with new data. <br>
 
-## .skip(numOfBits)
+- `newArray`: (optional) An `Array` or `Buffer` object containing data to be parsed. If left empty, the same array which the parser instance is initiated with is re-parsed.
 
-The parser will skip a given number of bits in the binary equivalent representation of the data.
-numOfBits: Number of bits to skip
+```
+const data1 = Buffer.from([1,2,3]);
+const data2 = Buffer.from([4,5,6]);
 
-## .endianness(endian)
+const chainedParser = new ChainedParser(data1);
+const parser = chainedParser.next(24, "threeBytesOfData");
 
-Select the endianness to decode the next values
-big | little
+const parserResult1 = parser.result()
+const parserResult2 = chainedParser
+                      .reset(data2)
+                      .next(24,"threeBytesOfData")
+                      .result();
 
-## .registerSize(registerSizeInBits)
+```
+
+## **.skip(numOfBits)**
+
+Skip a given number of bits in the binary equivalent representation of the data. <br>
+
+- `numOfBits`: (required) Number of bits to skip. Must be an integer.
+
+```
+const data = [1,2];
+
+const parser = new ChainedParser(data)
+              .skip(8)
+              .next(8, "secondByte");
+```
+
+## **.endianness(endian)**
+
+Select the endianness to decode the next values.
+
+- `endian`: (required) the value must be selected as `big` or `little`.
+
+```
+
+```
+
+## **.registerSize(registerSizeInBits)**
 
 Select the register size in bits. Currently only able to be set at the start. The register size is the size of every entry in the array. For example if we have a register size of 8, then the numeric value of every entry in the array must not exceed 2^8 - 1. This means that the leftmost bit in the binary representation of the value must be at most (8 - 1) spots to the left.
 
-
-## .parseUnfinished(choice)
+## **.parseUnfinished(toParse)**
 
 Choose to parse unfinished data or not.
-choice: boolean
 
-## .goBack(numOfBits)
+- `toParse`: (required) boolean value.
+
+## **.goBack(numOfBits)**
+
 Go back a select number of bits.
-## .next(sizeInBits, name, {options})
+
+```
+const data = [0x55]; // binary 01010101
+
+const countOnesAlternatingBits = (val) =>{
+  let result = 0;
+  while (val) {
+    result += val & 1;
+    val >>= 2;
+  }
+  return result;
+}
+
+const parser = new ChainedParser(data)
+              // should count 4 bits
+              .next(8, "evenBitsCount", { formatter: countOnesAlternatingBits })
+              // go back 8 bits
+              .goBack(8)
+              // should count 2 bits
+              .next(8, "oddBitsCount", { formatter: (val) => countOnesAlternatingBits(val >> 1) })
+
+```
+
+## **.next(sizeInBits, name[, options]})`**
+
 options: formatter, signedness, saveCondition
 
-## .choice(key, {paths})
-
+## **.choice(key, paths})**
