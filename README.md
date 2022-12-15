@@ -149,6 +149,9 @@ Select the endianness to decode the next values.
 
   const output = parser
     .endianness("big")
+    .next(8, "big8BitsA")
+    .next(8, "big8BitsB")
+    .goBack(16)
     .next(16, "big16Bits")
     .endianness("little")
     .next(16, "small16Bits").result;
@@ -157,7 +160,9 @@ Select the endianness to decode the next values.
   /**
    * Expected output:
    * {
-   *    big16Bits: 4660,
+   *    big8BitsA: 18,
+   *    big8BitsB: 52,
+   *    bi16Bits: 4660,
    *    small16Bits: 11336,
    * }
    */
@@ -165,7 +170,9 @@ Select the endianness to decode the next values.
 
 ## **.registerSize(registerSizeInBits)**
 
-Select the register size in bits. Currently only able to be set at the start. The register size is the size of every entry in the array. For example if we have a register size of 8, then the numeric value of every entry in the array must not exceed 2^8 - 1. This means that the leftmost bit in the binary representation of the value must be at most (8 - 1) spots to the left.
+Select the register size in bits. Currently is only set once (the most recent usage of the method in the parser chain).
+The register size is the size of every entry in the array. For example if we have a register size of 8, then the numeric value of every entry in the array must not exceed 2^8 - 1.
+This means that the leftmost bit in the binary representation of the value must be at most (8 - 1) spots to the left.
 
 - `registerSizeInBits`: (required) the size of the register in bits. Must be an integer.
 
