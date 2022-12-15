@@ -5,6 +5,11 @@
 This parser is meant to handle data in the form of an `Array` or a `Buffer` object.
 This parser was built in order to reduce the repetitiveness of creating parsers, and to make modifications simple.
 
+## How it works
+
+On instantiation, the data is converted into its binary equivalent as a string. This binary result depends on the `registerSizeInBits` private variable, which can be set via the `.registerSize` instance method. If the registerSize is 8-bits (which is the default), each entry in the array/buffer object is converted into its 8-bit binary equivalent (by padding 0's to the left) and then concatenated to form the `binaryEquivalent` private variable. <br>
+After forming the `binaryEquivalent` string, the instance method `next` is used to parse and traverse the string. 
+
 ## Example
 
 ```
