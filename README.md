@@ -117,7 +117,7 @@ const parserResult2 = chainedParser
 
 ## **.skip(numOfBits)**
 
-Skip a given number of bits in the binary equivalent representation of the data. <br>
+Skip a given number of bits in the binary equivalent representation of the data.
 
 - `numOfBits`: (required) Number of bits to skip. Must be an integer.
 
@@ -220,9 +220,46 @@ Choose to parse unfinished data or not.
 
 - `toParse`: (required) The flag that tells the program whether to parse the data or not. Must be a boolean; `true` or `false`.
 
+```
+  const data = [0xf0, 0x0f, 0xff, 0xaa];
+
+  const parser = new ChainedParser(data);
+
+  const output1 = parser
+    .skip(3 * 8) // skip 3 bytes
+    .next(6, "bits_24_to_30")
+    .next(3, "shouldntExist").result;
+
+  /**
+   * Expected Output
+   * {
+   *  bits_24_to_30: 0b101010
+   * }
+   */
+
+  const output2 = parser
+    .reset() // re-parse the same array
+    .parseUnfinished(true) // false by default, set as true
+    .skip(3 * 8) // skip 3 bytes
+    .next(6, "bits_24_to_30")
+    .next(3, "unfinishedData").result;
+
+  // Should not parse unfinished data
+  /**
+   * Expected Output
+   * {
+   *  bits_24_to_30: 0b101010,
+   *  unfinishedData: 0b10 // parsed as 2 bits
+   * }
+   */
+
+```
+
 ## **.goBack(numOfBits)**
 
-Go back a select number of bits.
+Go back a select number of bits in the binary equivalent representation of the data.
+
+- `numOfBits` : (required) Number of bits to go back. Must be an integer.
 
 ```
 const data = [0x55]; // binary 01010101
