@@ -1,4 +1,6 @@
+
 - [Chained Parser](#chained-parser)
+- [Installation](#installation)
   - [Introduction](#introduction)
   - [How it works](#how-it-works)
   - [Example](#example)
@@ -13,6 +15,10 @@
   - [**.choice(key, paths})**](#choicekey-paths)
 
 # Chained Parser
+
+# Installation
+
+`npm install BinaryDecoder`
 
 ## Introduction
 
@@ -69,19 +75,20 @@ After forming the `binaryEquivalent` string, the instance method `next` is used 
 
   /**
    * Expected Output:
-   *
-   * latitude: 90,
-   * longitude: 180,
-   * altitude: 20000,
-   * speed: 828,
-   * heading: 52.7,
-   * fixTime: 0,
-   * smokeSensor: 1,
-   * panicButton: 1,
-   * doorSensor: 1,
-   * alarmSensor: 1,
-   * immobilizer: 1,
-   * engineState: 6,
+   * {
+   *   latitude: 90,
+   *   longitude: 180,
+   *   altitude: 20000,
+   *   speed: 828,
+   *   heading: 52.7,
+   *   fixTime: 0,
+   *   smokeSensor: 1,
+   *   panicButton: 1,
+   *   doorSensor: 1,
+   *   alarmSensor: 1,
+   *   immobilizer: 1,
+   *   engineState: 6
+   * }
    */
 
 ```
@@ -103,9 +110,9 @@ const parser = chainedParser.next(24, "threeBytesOfData");
 
 const parserResult1 = parser.result()
 const parserResult2 = chainedParser
-                      .reset(data2)
-                      .next(24,"threeBytesOfData")
-                      .result();
+  .reset(data2)
+  .next(24,"threeBytesOfData")
+  .result();
 
 ```
 
@@ -119,29 +126,59 @@ Skip a given number of bits in the binary equivalent representation of the data.
 const data = [1,2];
 
 const parser = new ChainedParser(data)
-              .skip(8)
-              .next(8, "secondByte");
+  .skip(8)
+  .next(8, "secondByte");
+
+/**
+ * Expected output:
+ * {
+ *   secondByte: 2
+ * }
+ */
 ```
 
 ## **.endianness(endian)**
 
 Select the endianness to decode the next values.
 
-- `endian`: (required) the value must be selected as `big` or `little`.
+- `endian`: (required) defines the endianness of the values from that point onwards. The endianness can be changed at any point during the parsing process. The value must be selected as `big` or `little`.
 
 ```
+  const data = [0x12, 0x34, 0x12, 0x34];
 
+  const bd = new ChainedParser(data);
+
+  const output = bd
+    .endianness("big")
+    .next(16, "big16Bits")
+    .endianness("little")
+    .next(16, "small16Bits").result;
+
+
+  /**
+   * Expected output:
+   * {
+   *    big16Bits: 4660,
+   *    small16Bits: 11336,
+   * }
+   */
 ```
 
 ## **.registerSize(registerSizeInBits)**
 
 Select the register size in bits. Currently only able to be set at the start. The register size is the size of every entry in the array. For example if we have a register size of 8, then the numeric value of every entry in the array must not exceed 2^8 - 1. This means that the leftmost bit in the binary representation of the value must be at most (8 - 1) spots to the left.
 
+- `registerSizeInBits`: (required) the size of the register in bits. Must be an integer.
+
+```
+
+```
+
 ## **.parseUnfinished(toParse)**
 
 Choose to parse unfinished data or not.
 
-- `toParse`: (required) boolean value.
+- `toParse`: (required) The flag that tells the program whether to parse the data or not. Must be a boolean; `true` or `false`.
 
 ## **.goBack(numOfBits)**
 
