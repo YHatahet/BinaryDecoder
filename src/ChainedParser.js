@@ -33,7 +33,7 @@ class ChainedParser {
   /**@type {Object} */ #result;
   /**@type {String} */ #endian;
   /**@type {Number} */ #bitIndex;
-  /**@type {Number} */ #dataArray;
+  /**@type {Array} */ #dataArray;
   /**@type {Queue} */ #functionQueue;
   /**@type {Boolean} */ #parseUnfinished;
   /**@type {String} */ #binaryEquivalent;
@@ -45,11 +45,10 @@ class ChainedParser {
     goBack: this.#execGoBack,
     choice: this.#execChoice,
     endianness: this.#execEndianness,
-    registerSize: this.#execRegisterSize,
     parseUnfinished: this.#execParseUnfinished,
   };
 
-  // ================= Private functions =================
+  // ================= Private Functions =================
 
   /**
    * Initialize default private parameters and chained decoder instance.
@@ -60,12 +59,8 @@ class ChainedParser {
     this.#bitIndex = 0;
     this.#endian = "big";
     this.#dataArray = array;
-    this.#registerSizeInBits = 8;
+    this.#registerSizeInBits = this.#registerSizeInBits || 8; // needed for reset
     this.#parseUnfinished = false;
-    this.#binaryEquivalent = this.#arrToBinaryString(
-      array,
-      this.#registerSizeInBits
-    );
   }
 
   /**
@@ -122,10 +117,6 @@ class ChainedParser {
     this.#endian = endian;
   }
 
-  #execRegisterSize(registerSizeInBits) {
-    if (this.#bitIndex === 0) this.#registerSizeInBits = registerSizeInBits;
-  }
-
   #execGoBack(numberOfBits) {
     this.#bitIndex -= numberOfBits;
     if (this.#bitIndex < 0) this.#bitIndex = 0;
@@ -157,7 +148,7 @@ class ChainedParser {
 
     let val = parseInt(slice, 2);
 
-    // Signedness //TODO check how this is implemented
+    // Signedness
     if (options.signedness === "signed") {
       val = this.#unsignedToSignedBits(val, sizeInBits);
     }
@@ -241,19 +232,6 @@ class ChainedParser {
   }
 
   /**
-   * Select the register size in bits. Currently required to be set at the start.
-   * @param {number} registerSizeInBits
-   * @returns {this}
-   */
-  registerSize(registerSizeInBits) {
-    this.#functionQueue.push({
-      type: "registerSize",
-      param: registerSizeInBits,
-    });
-    return this;
-  }
-
-  /**
    * Choose to parse unfinished data or not.
    * @param {boolean} choice
    * @returns {this}
@@ -280,8 +258,8 @@ class ChainedParser {
    * @param {Object} [options]
    * @param {"signed" | "unsigned"} [options.signedness]
    * @param {Function} [options.formatter]
-   * @param {Function} [options.saveCondition] Function applied after formatter on value. If true, saved to result
-   * @returns {this}
+   * @param {Function} [options.continueCondition] After the formatter, this function checks on the resulting value. If true, continues parsing, otherwise stops safely.
+   * @param {Function} [options.saveCondition] After the formatter, this function checks on the resulting value. If true, saves it to result.  * @returns {this}
    */
   next(sizeInBits, name, options = {}) {
     this.#functionQueue.push({
@@ -305,11 +283,12 @@ class ChainedParser {
   }
 
   /**
-   *
+   * Select the register size in bits. Currently required to be set at the start.
+   * @param {number} registerSizeInBits
    * @returns {this}
    */
-  exec() {
-    while (this.#functionQueue.length) this.execOne();
+  registerSize(registerSizeInBits) {
+    this.#registerSizeInBits = registerSizeInBits;
     return this;
   }
 
@@ -317,7 +296,20 @@ class ChainedParser {
    *
    * @returns {this}
    */
-  execOne() {
+  exec() {
+    this.#binaryEquivalent = this.#arrToBinaryString(
+      this.#dataArray,
+      this.#registerSizeInBits
+    );
+    while (this.#functionQueue.length) this.#execOne();
+    return this;
+  }
+
+  /**
+   *
+   * @returns {this}
+   */
+  #execOne() {
     if (this.#functionQueue.length) {
       const { type, param } = this.#functionQueue.shift();
       type === "next" || type === "choice"
