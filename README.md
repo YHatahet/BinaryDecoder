@@ -1,3 +1,17 @@
+- [Chained Parser](#chained-parser)
+  - [Introduction](#introduction)
+  - [How it works](#how-it-works)
+  - [Example](#example)
+- [API](#api)
+  - [**.reset(newArray)**](#resetnewarray)
+  - [**.skip(numOfBits)**](#skipnumofbits)
+  - [**.endianness(endian)**](#endiannessendian)
+  - [**.registerSize(registerSizeInBits)**](#registersizeregistersizeinbits)
+  - [**.parseUnfinished(toParse)**](#parseunfinishedtoparse)
+  - [**.goBack(numOfBits)**](#gobacknumofbits)
+  - [**.next(sizeInBits, name\[, options\]})\`**](#nextsizeinbits-name-options)
+  - [**.choice(key, paths})**](#choicekey-paths)
+
 # Chained Parser
 
 ## Introduction
@@ -8,7 +22,7 @@ This parser was built in order to reduce the repetitiveness of creating parsers,
 ## How it works
 
 On instantiation, the data is converted into its binary equivalent as a string. This binary result depends on the `registerSizeInBits` private variable, which can be set via the `.registerSize` instance method. If the registerSize is 8-bits (which is the default), each entry in the array/buffer object is converted into its 8-bit binary equivalent (by padding 0's to the left) and then concatenated to form the `binaryEquivalent` private variable. <br>
-After forming the `binaryEquivalent` string, the instance method `next` is used to parse and traverse the string. 
+After forming the `binaryEquivalent` string, the instance method `next` is used to parse and traverse the string.
 
 ## Example
 
