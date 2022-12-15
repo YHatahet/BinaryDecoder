@@ -1,4 +1,3 @@
-
 - [Chained Parser](#chained-parser)
 - [Installation](#installation)
   - [Introduction](#introduction)
@@ -146,9 +145,9 @@ Select the endianness to decode the next values.
 ```
   const data = [0x12, 0x34, 0x12, 0x34];
 
-  const bd = new ChainedParser(data);
+  const parser = new ChainedParser(data);
 
-  const output = bd
+  const output = parser
     .endianness("big")
     .next(16, "big16Bits")
     .endianness("little")
@@ -171,6 +170,40 @@ Select the register size in bits. Currently only able to be set at the start. Th
 - `registerSizeInBits`: (required) the size of the register in bits. Must be an integer.
 
 ```
+  const data = [1, 1, 1, 1];
+
+  const parser = new ChainedParser(data);
+
+  const output1 = parser
+    .registerSize(8) // 8 bits by default.
+    .next(8, "firstByte")
+    .next(8, "secondByte")
+    .next(8, "thirdByte")
+    .next(8, "fourthByte").result;
+
+  /**
+   * expected output:
+   * {
+   *  firstByte: 1,
+   *  secondByte: 1,
+   *  thirdByte: 1,
+   *  fourthByte: 1,
+   * }
+   */
+
+  const output2 = parser
+    .reset() // re-parse the same array
+    .registerSize(4)
+    .next(8, "firstByte")
+    .next(8, "secondByte").result;
+
+  /**
+   * expected output:
+   * {
+   *  firstByte: 17, // 0b00010001
+   *  secondByte: 17, // 0b00010001
+   * }
+   */
 
 ```
 
@@ -197,12 +230,12 @@ const countOnesAlternatingBits = (val) =>{
 }
 
 const parser = new ChainedParser(data)
-              // should count 4 bits
-              .next(8, "evenBitsCount", { formatter: countOnesAlternatingBits })
-              // go back 8 bits
-              .goBack(8)
-              // should count 2 bits
-              .next(8, "oddBitsCount", { formatter: (val) => countOnesAlternatingBits(val >> 1) })
+  // should count 4 bits
+  .next(8, "evenBitsCount", { formatter: countOnesAlternatingBits })
+  // go back 8 bits
+  .goBack(8)
+  // should count 2 bits
+  .next(8, "oddBitsCount", { formatter: (val) => countOnesAlternatingBits(val >> 1) })
 
 ```
 
