@@ -1,6 +1,6 @@
 {
   "name": "chained-parser",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Decodes binary data sequentially",
   "main": "index.js",
   "scripts": {
