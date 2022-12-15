@@ -18,7 +18,7 @@ test("Testing 'skip' method", (t) => {
     _3rdAnd4thBytes: 0xff00,
   };
 
-  t.equal(output, expected, "");
+  t.equal(output, expected);
 });
 
 test("Testing basic 'next' method", (t) => {
@@ -30,8 +30,7 @@ test("Testing basic 'next' method", (t) => {
     .next(8, "firstByte")
     .next(8, "secondByte")
     .next(8, "thirdByte")
-    .next(8, "fourthByte")
-    .result;
+    .next(8, "fourthByte").result;
 
   const expected1 = {
     firstByte: 255,
@@ -40,20 +39,79 @@ test("Testing basic 'next' method", (t) => {
     fourthByte: 255,
   };
 
-  t.equal(output1, expected1, "");
+  t.equal(output1, expected1);
 
   const output2 = bd
     .reset()
     .next(16, "firstHalf")
-    .next(16, "secondHalf")
-    .result;
+    .next(16, "secondHalf").result;
 
   const expected2 = {
     firstHalf: 65280,
     secondHalf: 255,
   };
 
-  t.equal(output2, expected2, "");
+  t.equal(output2, expected2);
+});
+
+test("Testing the 'endianness' method", (t) => {
+  const data = [0x12, 0x34, 0x12, 0x34];
+
+  const bd = new ChainedParser(data);
+
+  const output = bd
+    .endianness("big")
+    .next(16, "big16Bits")
+    .endianness("little")
+    .next(16, "small16Bits").result;
+
+  const expected = {
+    big16Bits: 4660,
+    small16Bits: 11336,
+  };
+
+  t.equal(output, expected);
+});
+
+test("Testing the 'registerSize' method", (t) => {
+  const data = [1, 1, 1, 1];
+
+  const bd = new ChainedParser(data);
+
+  // const output1 = bd
+  //   .registerSize(8) // 8 bits by default.
+  //   .next(8, "firstByte")
+  //   .next(8, "secondByte")
+  //   .next(8, "thirdByte")
+  //   .next(8, "fourthByte").result;
+
+  // const expected1 = {
+  //   firstByte: 1,
+  //   secondByte: 1,
+  //   thirdByte: 1,
+  //   fourthByte: 1,
+  // };
+
+  // t.equal(output1, expected1);
+
+  const output2 = bd
+    .registerSize(4) // must be called before reset
+    .reset() // re-parse the same array
+    .next(8, "firstByte")
+    .next(8, "secondByte").result;
+
+  const output3 = new ChainedParser(data)
+    .registerSize(4) // must be called before reset
+    .next(8, "firstByte")
+    .next(8, "secondByte").result;
+
+  const expected2 = {
+    firstByte: 0b00010001,
+    secondByte: 0b00010001,
+  };
+  
+  t.equal(output2, expected2);
+  t.equal(output3, expected2);
 });
 
 test("Testing the parsing of unfinished data", (t) => {
@@ -64,23 +122,21 @@ test("Testing the parsing of unfinished data", (t) => {
   const output1 = bd
     .skip(3 * 8) // skip 3 bytes
     .next(6, "first6Bits")
-    .next(3, "shouldntExist")
-    .result;
+    .next(3, "shouldntExist").result;
 
   const expected1 = {
     first6Bits: 0b101010,
   };
 
   // Should not parse unfinished data
-  t.equal(output1, expected1, "");
+  t.equal(output1, expected1);
 
   const output2 = bd
     .reset() // re-parse the same array
     .parseUnfinished(true) // false by default, set as true
     .skip(3 * 8) // skip 3 bytes
     .next(6, "first6Bits")
-    .next(3, "unfinishedData")
-    .result;
+    .next(3, "unfinishedData").result;
 
   const expected2 = {
     first6Bits: 0b101010,
@@ -88,7 +144,7 @@ test("Testing the parsing of unfinished data", (t) => {
   };
 
   // Should parse unfinished data
-  t.equal(output2, expected2, "");
+  t.equal(output2, expected2);
 });
 
 test("Testing formatter function option", (t) => {
@@ -102,8 +158,7 @@ test("Testing formatter function option", (t) => {
     .next(8, "firstByte", { formatter: addTen })
     .next(8, "secondByte", { formatter: addTen })
     .next(8, "thirdByte", { formatter: addTen })
-    .next(8, "fourthByte", { formatter: addTen })
-    .result;
+    .next(8, "fourthByte", { formatter: addTen }).result;
 
   const expected1 = {
     firstByte: 22,
@@ -112,7 +167,7 @@ test("Testing formatter function option", (t) => {
     fourthByte: 88,
   };
 
-  t.equal(output1, expected1, "");
+  t.equal(output1, expected1);
 });
 
 test("Testing save condition option", (t) => {
@@ -132,15 +187,14 @@ test("Testing save condition option", (t) => {
     .next(8, "fourthByte", {
       formatter: addTen,
       saveCondition: (val) => val < 3,
-    })
-    .result; // shouldn't save
+    }).result; // shouldn't save
 
   const expected1 = {
     firstByte: 12,
     thirdByte: 66,
   };
 
-  t.equal(output1, expected1, "");
+  t.equal(output1, expected1);
 });
 
 test("Testing 'choice' option", (t) => {
@@ -160,8 +214,7 @@ test("Testing 'choice' option", (t) => {
     .choice("firstByte", {
       1: parser1,
       default: parser2,
-    })
-    .result;
+    }).result;
 
   const expected1 = {
     firstByte: 1,
@@ -170,7 +223,7 @@ test("Testing 'choice' option", (t) => {
     b: 4,
   };
 
-  t.equal(output1, expected1, "");
+  t.equal(output1, expected1);
 
   // on default choice
   const output2 = bd
@@ -179,8 +232,7 @@ test("Testing 'choice' option", (t) => {
     .choice("firstByte", {
       1: parser1,
       default: parser2,
-    })
-    .result;
+    }).result;
 
   const expected2 = {
     firstByte: 1,
@@ -188,7 +240,7 @@ test("Testing 'choice' option", (t) => {
     a: 3,
     b: 4,
   };
-  t.equal(output2, expected2, "");
+  t.equal(output2, expected2);
 });
 
 test("Testing 'choice' option when chained to another 'choice'", (t) => {
@@ -198,17 +250,16 @@ test("Testing 'choice' option when chained to another 'choice'", (t) => {
 
   const parser1 = new ChainedParser().next(16, "thirdAndFourthBytes");
 
-  const parser2 = new ChainedParser().next(8, "secondByte").choice("firstByte", {
-    1: parser1,
-  });
-
-  const output1 = bd
-    .next(8, "firstByte")
+  const parser2 = new ChainedParser()
+    .next(8, "secondByte")
     .choice("firstByte", {
-      1: parser2,
-      default: parser2,
-    })
-    .result;
+      1: parser1,
+    });
+
+  const output1 = bd.next(8, "firstByte").choice("firstByte", {
+    1: parser2,
+    default: parser2,
+  }).result;
 
   const expected1 = {
     firstByte: 1,
@@ -216,7 +267,7 @@ test("Testing 'choice' option when chained to another 'choice'", (t) => {
     thirdAndFourthBytes: (3 << 8) + 4,
   };
 
-  t.equal(output1, expected1, "");
+  t.equal(output1, expected1);
 });
 
 test("Chaining 'choice' options in the same expression", (t) => {
@@ -232,7 +283,9 @@ test("Chaining 'choice' options in the same expression", (t) => {
     })
     .choice("second", {
       3: new ChainedParser().next(8, "third", { formatter: (val) => val + 1 }),
-      default: new ChainedParser().next(8, "third", { formatter: (val) => val + 2 }),
+      default: new ChainedParser().next(8, "third", {
+        formatter: (val) => val + 2,
+      }),
     })
     .next(8, "fourth").result;
 
@@ -243,7 +296,7 @@ test("Chaining 'choice' options in the same expression", (t) => {
     fourth: 4,
   };
 
-  t.equal(output1, expected1, "");
+  t.equal(output1, expected1);
 });
 
 test("Testing 'goBack' option", (t) => {
@@ -257,8 +310,7 @@ test("Testing 'goBack' option", (t) => {
     .goBack(8)
     .next(8, "secondByteAgain")
     .next(8, "thirdByte")
-    .next(8, "fourthByte")
-    .result;
+    .next(8, "fourthByte").result;
 
   const expected1 = {
     firstByte: 12,
@@ -268,7 +320,7 @@ test("Testing 'goBack' option", (t) => {
     fourthByte: 78,
   };
 
-  t.equal(output1, expected1, "");
+  t.equal(output1, expected1);
 });
 
 test("Testing formatter function option", (t) => {
@@ -282,8 +334,7 @@ test("Testing formatter function option", (t) => {
     .next(8, "firstByte", { formatter: addTen })
     .next(8, "secondByte", { formatter: addTen })
     .next(8, "thirdByte", { formatter: addTen })
-    .next(8, "fourthByte", { formatter: addTen })
-    .result;
+    .next(8, "fourthByte", { formatter: addTen }).result;
 
   const expected1 = {
     firstByte: 22,
@@ -292,7 +343,7 @@ test("Testing formatter function option", (t) => {
     fourthByte: 88,
   };
 
-  t.equal(output1, expected1, "");
+  t.equal(output1, expected1);
 });
 
 test("Testing real life data from Teltonika device", (t) => {
@@ -326,8 +377,7 @@ test("Testing real life data from Teltonika device", (t) => {
     .next(32, "doorSensor")
     .next(32, "alarmSensor")
     .next(32, "immobilizer")
-    .next(31, "engineState")
-    .result;
+    .next(31, "engineState").result;
 
   const expected1 = {
     latitude: 90,
@@ -344,5 +394,5 @@ test("Testing real life data from Teltonika device", (t) => {
     engineState: 6,
   };
 
-  t.equal(output1, expected1, "");
+  t.equal(output1, expected1);
 });
