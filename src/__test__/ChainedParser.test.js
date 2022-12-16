@@ -24,9 +24,9 @@ test("Testing 'skip' method", (t) => {
 test("Testing basic 'next' method", (t) => {
   const data = [255, 0, 0, 255];
 
-  const bd = new ChainedParser(data);
+  const parser = new ChainedParser(data);
 
-  const output1 = bd
+  const output1 = parser
     .next(8, "firstByte")
     .next(8, "secondByte")
     .next(8, "thirdByte")
@@ -41,7 +41,7 @@ test("Testing basic 'next' method", (t) => {
 
   t.equal(output1, expected1);
 
-  const output2 = bd
+  const output2 = parser
     .reset()
     .next(16, "firstHalf")
     .next(16, "secondHalf").result;
@@ -57,15 +57,20 @@ test("Testing basic 'next' method", (t) => {
 test("Testing the 'endianness' method", (t) => {
   const data = [0x12, 0x34, 0x12, 0x34];
 
-  const bd = new ChainedParser(data);
+  const parser = new ChainedParser(data);
 
-  const output = bd
+  const output = parser
     .endianness("big")
+    .next(8, "big8BitsA")
+    .next(8, "big8BitsB")
+    .goBack(16)
     .next(16, "big16Bits")
     .endianness("little")
     .next(16, "small16Bits").result;
 
   const expected = {
+    big8BitsA: 18,
+    big8BitsB: 52,
     big16Bits: 4660,
     small16Bits: 11336,
   };
@@ -76,27 +81,27 @@ test("Testing the 'endianness' method", (t) => {
 test("Testing the 'registerSize' method", (t) => {
   const data = [1, 1, 1, 1];
 
-  const bd = new ChainedParser(data);
+  const parser = new ChainedParser(data);
 
-  // const output1 = bd
-  //   .registerSize(8) // 8 bits by default.
-  //   .next(8, "firstByte")
-  //   .next(8, "secondByte")
-  //   .next(8, "thirdByte")
-  //   .next(8, "fourthByte").result;
+  const output1 = parser
+    .registerSize(8) // 8 bits by default.
+    .next(8, "firstByte")
+    .next(8, "secondByte")
+    .next(8, "thirdByte")
+    .next(8, "fourthByte").result;
 
-  // const expected1 = {
-  //   firstByte: 1,
-  //   secondByte: 1,
-  //   thirdByte: 1,
-  //   fourthByte: 1,
-  // };
+  const expected1 = {
+    firstByte: 1,
+    secondByte: 1,
+    thirdByte: 1,
+    fourthByte: 1,
+  };
 
-  // t.equal(output1, expected1);
+  t.equal(output1, expected1);
 
-  const output2 = bd
-    .registerSize(4) // must be called before reset
+  const output2 = parser
     .reset() // re-parse the same array
+    .registerSize(4)
     .next(8, "firstByte")
     .next(8, "secondByte").result;
 
@@ -109,7 +114,7 @@ test("Testing the 'registerSize' method", (t) => {
     firstByte: 0b00010001,
     secondByte: 0b00010001,
   };
-  
+
   t.equal(output2, expected2);
   t.equal(output3, expected2);
 });
@@ -117,9 +122,9 @@ test("Testing the 'registerSize' method", (t) => {
 test("Testing the parsing of unfinished data", (t) => {
   const data = [0xf0, 0x0f, 0xff, 0xaa];
 
-  const bd = new ChainedParser(data);
+  const parser = new ChainedParser(data);
 
-  const output1 = bd
+  const output1 = parser
     .skip(3 * 8) // skip 3 bytes
     .next(6, "first6Bits")
     .next(3, "shouldntExist").result;
@@ -131,7 +136,7 @@ test("Testing the parsing of unfinished data", (t) => {
   // Should not parse unfinished data
   t.equal(output1, expected1);
 
-  const output2 = bd
+  const output2 = parser
     .reset() // re-parse the same array
     .parseUnfinished(true) // false by default, set as true
     .skip(3 * 8) // skip 3 bytes
@@ -150,11 +155,11 @@ test("Testing the parsing of unfinished data", (t) => {
 test("Testing formatter function option", (t) => {
   const data = [12, 34, 56, 78];
 
-  const bd = new ChainedParser(data);
+  const parser = new ChainedParser(data);
 
   const addTen = (val) => val + 10;
 
-  const output1 = bd
+  const output1 = parser
     .next(8, "firstByte", { formatter: addTen })
     .next(8, "secondByte", { formatter: addTen })
     .next(8, "thirdByte", { formatter: addTen })
@@ -173,11 +178,11 @@ test("Testing formatter function option", (t) => {
 test("Testing save condition option", (t) => {
   const data = [12, 34, 56, 78];
 
-  const bd = new ChainedParser(data);
+  const parser = new ChainedParser(data);
 
   const addTen = (val) => val + 10;
 
-  const output1 = bd
+  const output1 = parser
     .next(8, "firstByte", { saveCondition: (val) => val > 3 }) // should save
     .next(8, "secondByte", { saveCondition: (val) => val < 3 }) // shouldn't save
     .next(8, "thirdByte", {
@@ -200,7 +205,7 @@ test("Testing save condition option", (t) => {
 test("Testing 'choice' option", (t) => {
   const data = [1, 2, 3, 4];
 
-  const bd = new ChainedParser(data);
+  const parser = new ChainedParser(data);
 
   const addTen = (val) => val + 10;
 
@@ -208,13 +213,16 @@ test("Testing 'choice' option", (t) => {
   const parser2 = new ChainedParser().next(16, "c");
 
   // on selected choice
-  const output1 = bd
+  const output1 = parser
     .next(8, "firstByte")
     .next(8, "secondByte", { formatter: addTen })
-    .choice("firstByte", {
-      1: parser1,
-      default: parser2,
-    }).result;
+    .choice(
+      "firstByte",
+      {
+        1: parser1,
+      },
+      parser2
+    ).result;
 
   const expected1 = {
     firstByte: 1,
@@ -226,13 +234,16 @@ test("Testing 'choice' option", (t) => {
   t.equal(output1, expected1);
 
   // on default choice
-  const output2 = bd
+  const output2 = parser
     .next(8, "firstByte")
     .next(8, "secondByte", { formatter: addTen })
-    .choice("firstByte", {
-      1: parser1,
-      default: parser2,
-    }).result;
+    .choice(
+      "firstByte",
+      {
+        1: parser1,
+      },
+      parser2
+    ).result;
 
   const expected2 = {
     firstByte: 1,
@@ -246,7 +257,7 @@ test("Testing 'choice' option", (t) => {
 test("Testing 'choice' option when chained to another 'choice'", (t) => {
   const data = [1, 2, 3, 4];
 
-  const bd = new ChainedParser(data);
+  const parser = new ChainedParser(data);
 
   const parser1 = new ChainedParser().next(16, "thirdAndFourthBytes");
 
@@ -256,10 +267,17 @@ test("Testing 'choice' option when chained to another 'choice'", (t) => {
       1: parser1,
     });
 
-  const output1 = bd.next(8, "firstByte").choice("firstByte", {
-    1: parser2,
-    default: parser2,
-  }).result;
+  const parser3 = new ChainedParser()
+    .next(8, "secondByte", { formatter: (val) => val + 10 })
+    .next(16, "thirdAndFourthBytes");
+
+  const output1 = parser.next(8, "firstByte").choice(
+    "firstByte", // value is 1
+    {
+      10: parser3, // not used
+    },
+    parser2 // default path, used.
+  ).result;
 
   const expected1 = {
     firstByte: 1,
@@ -273,26 +291,36 @@ test("Testing 'choice' option when chained to another 'choice'", (t) => {
 test("Chaining 'choice' options in the same expression", (t) => {
   const data = [1, 2, 3, 4];
 
-  const bd = new ChainedParser(data);
+  const parser = new ChainedParser(data);
 
-  const output1 = bd
+  const output1 = parser
     .next(8, "first")
-    .choice("first", {
-      1: new ChainedParser().next(8, "second", { formatter: (val) => val + 1 }),
-      default: new ChainedParser().next(8, "second"),
-    })
-    .choice("second", {
-      3: new ChainedParser().next(8, "third", { formatter: (val) => val + 1 }),
-      default: new ChainedParser().next(8, "third", {
+    .choice(
+      "first",
+      {
+        1: new ChainedParser().next(8, "second", {
+          formatter: (val) => val + 1,
+        }),
+      },
+      new ChainedParser().next(8, "second")
+    )
+    .choice(
+      "second",
+      {
+        2: new ChainedParser().next(8, "third", {
+          formatter: (val) => val + 1,
+        }),
+      },
+      new ChainedParser().next(8, "third", {
         formatter: (val) => val + 2,
-      }),
-    })
+      })
+    )
     .next(8, "fourth").result;
 
   const expected1 = {
     first: 1,
     second: 3,
-    third: 4,
+    third: 5,
     fourth: 4,
   };
 
@@ -302,9 +330,9 @@ test("Chaining 'choice' options in the same expression", (t) => {
 test("Testing 'goBack' option", (t) => {
   const data = [12, 34, 56, 78];
 
-  const bd = new ChainedParser(data);
+  const parser = new ChainedParser(data);
 
-  const output1 = bd
+  const output1 = parser
     .next(8, "firstByte")
     .next(8, "secondByte")
     .goBack(8)
@@ -326,11 +354,11 @@ test("Testing 'goBack' option", (t) => {
 test("Testing formatter function option", (t) => {
   const data = [12, 34, 56, 78];
 
-  const bd = new ChainedParser(data);
+  const parser = new ChainedParser(data);
 
   const addTen = (val) => val + 10;
 
-  const output1 = bd
+  const output1 = parser
     .next(8, "firstByte", { formatter: addTen })
     .next(8, "secondByte", { formatter: addTen })
     .next(8, "thirdByte", { formatter: addTen })
@@ -359,9 +387,9 @@ test("Testing real life data from Teltonika device", (t) => {
     128,
   ];
 
-  const bd = new ChainedParser(data);
+  const parser = new ChainedParser(data);
 
-  const output1 = bd
+  const output1 = parser
     .skip(16)
     .next(24, "latitude", { formatter: latLongFormatter, signedness: "signed" })
     .next(25, "longitude", {
