@@ -9,12 +9,13 @@ const DQ = require("dequeue");
 class EmptyChainedParser {
   emptyReturn = () => this;
   next = this.emptyReturn;
-  skip = this.emptyReturn;
+  choice = this.emptyReturn;
   reset = this.emptyReturn;
+  skip = this.emptyReturn;
   endianness = this.emptyReturn;
   registerSize = this.emptyReturn;
   parseUnfinished = this.emptyReturn;
-  defaultFormatter = this.emptyReturn;
+  goBack = this.emptyReturn;
 }
 
 /**
@@ -126,7 +127,8 @@ class ChainedParser {
     this.#parseUnfinished = choice;
   }
 
-  #execNext(sizeInBits, name, options) {
+  #execNext(args) {
+    const [sizeInBits, name, options] = args;
     // Stop if there's no more data to parse
     if (this.#bitIndex >= this.#binaryEquivalent.length) return this;
 
@@ -175,12 +177,15 @@ class ChainedParser {
     this.#bitIndex = end;
   }
 
-  #execChoice(key, paths) {
+  #execChoice(args) {
+    const [key, paths, defaultPath] = args;
     /**
      * dequeue the options from the paths and place them in this current function queue (until we reach choice)
      */
-    const newParser =
-      paths[this.#result[key]] || paths.default || new EmptyChainedParser();
+    const newParser = paths[this.#result[key]] || defaultPath;
+
+    if (newParser === undefined) return;
+
     let res;
     do {
       res = newParser.#functionQueue.pop();
@@ -274,10 +279,10 @@ class ChainedParser {
    * @param {String} key
    * @param {{<String | Number>: <ChainedParser | EmptyChainedParser>}} paths keys whose values are parsers
    */
-  choice(key, paths = {}) {
+  choice(key, paths = {}, defaultFn = undefined) {
     this.#functionQueue.push({
       type: "choice",
-      param: [key, paths],
+      param: [key, paths, defaultFn],
     });
     return this;
   }
@@ -301,20 +306,9 @@ class ChainedParser {
       this.#dataArray,
       this.#registerSizeInBits
     );
-    while (this.#functionQueue.length) this.#execOne();
-    return this;
-  }
-
-  /**
-   *
-   * @returns {this}
-   */
-  #execOne() {
-    if (this.#functionQueue.length) {
+    while (this.#functionQueue.length) {
       const { type, param } = this.#functionQueue.shift();
-      type === "next" || type === "choice"
-        ? this.#mappings[type].bind(this)(...param)
-        : this.#mappings[type].bind(this)(param);
+      this.#mappings[type].bind(this)(param);
     }
     return this;
   }
