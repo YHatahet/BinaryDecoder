@@ -4,14 +4,14 @@
   - [How it works](#how-it-works)
   - [Example](#example)
 - [API](#api)
+  - [**.next(sizeInBits, name\[, options\]})\`**](#nextsizeinbits-name-options)
+  - [**.choice(key, paths, defaultPath)**](#choicekey-paths-defaultpath)
   - [**.reset(newArray)**](#resetnewarray)
   - [**.skip(numOfBits)**](#skipnumofbits)
   - [**.endianness(endian)**](#endiannessendian)
   - [**.registerSize(registerSizeInBits)**](#registersizeregistersizeinbits)
   - [**.parseUnfinished(toParse)**](#parseunfinishedtoparse)
   - [**.goBack(numOfBits)**](#gobacknumofbits)
-  - [**.next(sizeInBits, name\[, options\]})\`**](#nextsizeinbits-name-options)
-  - [**.choice(key, paths})**](#choicekey-paths)
 
 # Chained Parser
 
@@ -94,11 +94,101 @@ After forming the `binaryEquivalent` string, the instance method `next` is used 
 
 # API
 
+## **.next(sizeInBits, name[, options]})`**
+
+Parse the next select number of bits and store them
+
+- `sizeInBits` : (required) The number of bits to parse from the binary equivalent representation of the data. Must be an integer.
+- `name` : (required) The key of the JSON object where the result of the parser will be stored.
+- `options` : (optional) An object containing options which may alter the output of the parser. These options are:
+  - `formatter`: A function that takes in the parsed value and returns a formatted version to be saved. The formatter function can return any type.
+  - `signedness`: Controls the sign of the parsed result. The value must be either `signed` or `unsigned`.
+  - `saveCondition`: A function that takes in the parsed value and must return a `boolean` type. The returned value determines whether the parsed value will be saved in the result or not.
+  - `continueCondition`: A function that takes in the parsed value and must return a `boolean` type. The returned value determines whether the parser will continue parsing or not. If `false` is returned, even the current parsed value is not saved.
+
+```
+  const data = [255, 0, 0, 255];
+
+  const parser = new ChainedParser(data);
+
+  const output1 = parser
+    .next(8, "firstByte")
+    .next(8, "secondByte")
+    .next(8, "thirdByte")
+    .next(8, "fourthByte").result;
+
+  /**
+   * Expected Output 1:
+   * {
+   *   firstByte: 255,
+   *   secondByte: 0,
+   *   thirdByte: 0,
+   *   fourthByte: 255,
+   * }
+   */
+
+  const output2 = parser
+    .reset() //parse the same array
+    .next(16, "firstHalf")
+    .next(16, "secondHalf").result;
+
+  /**
+   * Expected Output 1:
+   * {
+   *   firstHalf: 65280,
+   *   secondHalf: 255,
+   * }
+   */
+```
+
+## **.choice(key, paths, defaultPath)**
+
+Checks a previously parsed key, and selects a parser path based on the key's value.
+
+- `key` : (required) The key whose value will be checked from the currently parsed data.
+- `paths` : (required) An object whose keys are compared against, and whose values are chained parser paths.
+- `defaultPath` : (optional) A default path which is used if all that `paths` keys do not match with the value of the selected key.
+
+```
+  const data = [1, 2, 3, 4];
+
+  const parser = new ChainedParser(data);
+
+  const parser1 = new ChainedParser().next(16, "thirdAndFourthBytes");
+
+  const parser2 = new ChainedParser()
+    .next(8, "secondByte")
+    .choice("firstByte", {
+      1: parser1,
+    });
+
+  const parser3 = new ChainedParser()
+    .next(8, "secondByte", { formatter: (val) => val + 10 })
+    .next(16, "thirdAndFourthBytes");
+
+  const output = parser.next(8, "firstByte").choice(
+    "firstByte", // value is 1
+    {
+      10: parser3, // not used
+    },
+    parser2 // default path, used.
+  ).result;
+
+  /**
+ * Expected output:
+ * {
+ *   firstByte: 1,
+ *   secondByte: 2,
+ *   thirdAndFourthBytes: 772
+ * }
+ */
+```
+
 ## **.reset(newArray)**
 
 Reinitialize the decoder with new data. <br>
 
-- `newArray`: (optional) An `Array` or `Buffer` object containing data to be parsed. If left empty, the same array which the parser instance is initiated with is re-parsed.
+- `newArray` : (optional) An `Array` or `Buffer` object containing data to be parsed. If left empty, the same array which the parser instance is initiated with is re-parsed.
 
 ```
 const data1 = Buffer.from([1,2,3]);
@@ -119,7 +209,7 @@ const parserResult2 = chainedParser
 
 Skip a given number of bits in the binary equivalent representation of the data.
 
-- `numOfBits`: (required) Number of bits to skip. Must be an integer.
+- `numOfBits` : (required) Number of bits to skip. Must be an integer.
 
 ```
 const data = [1,2];
@@ -140,7 +230,7 @@ const parser = new ChainedParser(data)
 
 Select the endianness to decode the next values.
 
-- `endian`: (required) defines the endianness of the values from that point onwards. The endianness can be changed at any point during the parsing process. The value must be selected as `big` or `little`.
+- `endian` : (required) defines the endianness of the values from that point onwards. The endianness can be changed at any point during the parsing process. The value must be selected as `big` or `little`.
 
 ```
   const data = [0x12, 0x34, 0x12, 0x34];
@@ -174,7 +264,7 @@ Select the register size in bits. Currently is only set once (the most recent us
 The register size is the size of every entry in the array. For example if we have a register size of 8, then the numeric value of every entry in the array must not exceed 2^8 - 1.
 This means that the leftmost bit in the binary representation of the value must be at most (8 - 1) spots to the left.
 
-- `registerSizeInBits`: (required) the size of the register in bits. Must be an integer.
+- `registerSizeInBits` : (required) the size of the register in bits. Must be an integer.
 
 ```
   const data = [1, 1, 1, 1];
@@ -218,7 +308,7 @@ This means that the leftmost bit in the binary representation of the value must 
 
 Choose to parse unfinished data or not.
 
-- `toParse`: (required) The flag that tells the program whether to parse the data or not. Must be a boolean; `true` or `false`.
+- `toParse` : (required) The flag that tells the program whether to parse the data or not. Must be a boolean; `true` or `false`.
 
 ```
   const data = [0xf0, 0x0f, 0xff, 0xaa];
@@ -282,9 +372,3 @@ const parser = new ChainedParser(data)
   .next(8, "oddBitsCount", { formatter: (val) => countOnesAlternatingBits(val >> 1) })
 
 ```
-
-## **.next(sizeInBits, name[, options]})`**
-
-options: formatter, signedness, saveCondition
-
-## **.choice(key, paths})**
