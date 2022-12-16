@@ -1,4 +1,5 @@
-- [Chained Parser](#chained-parser)
+# Chained Parser
+
 - [Installation](#installation)
   - [Introduction](#introduction)
   - [How it works](#how-it-works)
@@ -12,8 +13,6 @@
   - [**.registerSize(registerSizeInBits)**](#registersizeregistersizeinbits)
   - [**.parseUnfinished(toParse)**](#parseunfinishedtoparse)
   - [**.goBack(numOfBits)**](#gobacknumofbits)
-
-# Chained Parser
 
 # Installation
 
