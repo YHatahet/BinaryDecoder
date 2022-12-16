@@ -1,7 +1,8 @@
 # Chained Parser
 
 - [Installation](#installation)
-  - [Introduction](#introduction)
+- [Introduction](#introduction)
+  - [Summary](#summary)
   - [How it works](#how-it-works)
   - [Example](#example)
 - [API](#api)
@@ -14,12 +15,15 @@
   - [**.parseUnfinished(toParse)**](#parseunfinishedtoparse)
   - [**.goBack(numOfBits)**](#gobacknumofbits)
 
+<br>
+
 # Installation
 
 `npm install BinaryDecoder`
 
-## Introduction
+# Introduction
 
+## Summary
 This parser is meant to handle data in the form of an `Array` or a `Buffer` object.
 This parser was built in order to reduce the repetitiveness of creating parsers, and to make modifications simple.
 
