@@ -19,7 +19,7 @@
 
 # Installation
 
-`npm install BinaryDecoder`
+`npm i chained-parser`
 
 # Introduction
 
