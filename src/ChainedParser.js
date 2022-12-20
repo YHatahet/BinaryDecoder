@@ -70,7 +70,7 @@ class ChainedParser {
    * @param {Number} registerSizeInBits size in bits of every register/entry in array
    * @returns {String}
    */
-  #arrToBinaryString(array, registerSizeInBits = 8) {
+  #arrToBinaryString(array = [], registerSizeInBits = 8) {
     const outputArray = [];
     for (const byte of array) {
       let binaryEquivalent = byte.toString(2);
